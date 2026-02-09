@@ -334,7 +334,11 @@
               .from(BUCKET)
               .getPublicUrl(apkFile.name);
 
-            apkUrl = urlData.publicUrl;
+            if (urlData && urlData.publicUrl) {
+              apkUrl = urlData.publicUrl;
+            } else {
+              console.error('getPublicUrl returned no publicUrl for', apkFile.name, urlData);
+            }
 
             // Extract version from filename if possible (e.g., vanta-sales-1.0.3.apk)
             const versionMatch = apkFile.name.match(/(\d+\.\d+\.\d+)/);

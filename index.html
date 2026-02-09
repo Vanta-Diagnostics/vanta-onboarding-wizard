@@ -568,6 +568,8 @@
     let realtimeChannel = null;
     let pollInterval = null;
     let ocrWorker = null;
+    let rtRetryCount = 0;        // Realtime reconnect retry counter
+    let rtRetryTimeout = null;   // Pending reconnect timeout ID
 
     // Step mapping for iOS and Android
     const IOS_STEPS = ['register', 'screenshot', 'wait-dev', 'accept', 'wait-tf', 'download', 'wait-creds', 'complete'];
@@ -622,7 +624,7 @@
             startPolling();
             return;
           }
-        } catch (e) { /* fall through */ }
+        } catch (e) { console.warn('checkExistingSession: failed to fetch user', userId, e); }
         localStorage.removeItem('onboarding_user_id');
         userId = null;
       }
@@ -710,7 +712,7 @@
           btn.prop('disabled', false).text('Continue');
           return;
         }
-      } catch (e) { /* no existing record, continue */ }
+      } catch (e) { console.warn('Registration lookup: no existing record or query failed', e); }
 
       const record = {
         first_name: $('#firstName').val().trim(),
@@ -826,7 +828,8 @@
 
     async function confirmAppleId() {
       const email = $('#appleIdEmail').val().trim().toLowerCase();
-      if (!email || !email.includes('@')) {
+      // Basic email pattern: local@domain.tld (rejects empty, multiple @, missing domain/tld)
+      if (!email || !/^[\w.+-]+@[\w.-]+\.\w{2,}$/.test(email)) {
         showError('Please enter a valid Apple ID email address.');
         return;
       }
@@ -904,6 +907,9 @@
     // REALTIME & POLLING
     // =========================================================================
     function subscribeRealtime() {
+      // Clear any pending reconnect timeout to avoid duplicates
+      if (rtRetryTimeout) { clearTimeout(rtRetryTimeout); rtRetryTimeout = null; }
+
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
       }
@@ -923,10 +929,17 @@
           }
         })
         .subscribe((status) => {
-          // Auto-reconnect on channel errors (common on mobile sleep/wake)
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.warn('Realtime channel ' + status + ', reconnecting in 3s...');
-            setTimeout(() => subscribeRealtime(), 3000);
+          if (status === 'SUBSCRIBED') {
+            // Connected successfully — reset backoff counter
+            rtRetryCount = 0;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Exponential backoff: 2s, 4s, 8s, 16s … capped at 30s, plus jitter
+            var baseDelay = Math.min(2000 * Math.pow(2, rtRetryCount), 30000);
+            var jitter = Math.floor(Math.random() * 1000); // 0–999ms jitter
+            var delay = baseDelay + jitter;
+            rtRetryCount++;
+            console.warn('Realtime channel ' + status + ', retry #' + rtRetryCount + ' in ' + delay + 'ms');
+            rtRetryTimeout = setTimeout(function() { subscribeRealtime(); }, delay);
           }
         });
     }
@@ -951,7 +964,7 @@
         }
         // Also update queue positions
         updateQueuePositions();
-      } catch (e) { /* silent */ }
+      } catch (e) { console.warn('refreshStatus failed:', e); }
     }
 
     async function updateQueuePositions() {
@@ -985,7 +998,7 @@
           const pos = data.findIndex(r => String(r.id) === String(userId)) + 1;
           $('#' + queueElId).text(pos > 0 ? '#' + pos : '--');
         }
-      } catch (e) { /* silent */ }
+      } catch (e) { console.warn('updateQueuePositions failed:', e); }
     }
 
     // =========================================================================
