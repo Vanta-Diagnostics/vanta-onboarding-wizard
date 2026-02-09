@@ -593,10 +593,11 @@
       checkExistingSession();
       preloadOCR();
 
-      // Reconnect on visibility change
+      // Reconnect on visibility change (e.g., user switches back from Settings/email)
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden && userId) {
           refreshStatus();
+          subscribeRealtime(); // re-establish realtime in case it dropped while backgrounded
         }
       });
     });
@@ -630,6 +631,8 @@
     // OCR PRE-LOADING
     // =========================================================================
     function preloadOCR() {
+      // Only iOS users need OCR — skip for Android to save ~40MB of mobile memory
+      if (userPlatform !== 'ios') return;
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
       script.onload = function() {
@@ -669,6 +672,13 @@
 
       const email = $('#vantaEmail').val().trim().toLowerCase();
 
+      // Validate @vantadx.com domain
+      if (!email.endsWith('@vantadx.com')) {
+        showError('Please use your @vantadx.com email address.');
+        btn.prop('disabled', false).text('Continue');
+        return;
+      }
+
       // Check for existing registration
       try {
         const { data: existing } = await supabase
@@ -682,6 +692,7 @@
           userPlatform = existing.platform;
           currentStatus = existing.status;
           localStorage.setItem('onboarding_user_id', userId);
+          localStorage.setItem('onboarding_vanta_email', email);
           showStepForStatus(existing);
           subscribeRealtime();
           startPolling();
@@ -719,6 +730,7 @@
       userId = data.id;
       currentStatus = data.status;
       localStorage.setItem('onboarding_user_id', userId);
+      localStorage.setItem('onboarding_vanta_email', email);
       subscribeRealtime();
       startPolling();
       showStepForStatus(data);
@@ -777,6 +789,10 @@
         if (emailMatch) {
           $('#appleIdEmail').val(emailMatch[0].toLowerCase());
         }
+
+        // Terminate worker to free ~40MB of mobile memory
+        try { worker.terminate(); } catch (_) {}
+        ocrWorker = null;
 
         $('#ocrProgress').hide();
         $('#uploadZone').show().html(
@@ -889,12 +905,18 @@
             showStepForStatus(newData);
           }
         })
-        .subscribe();
+        .subscribe((status) => {
+          // Auto-reconnect on channel errors (common on mobile sleep/wake)
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('Realtime channel ' + status + ', reconnecting in 3s...');
+            setTimeout(() => subscribeRealtime(), 3000);
+          }
+        });
     }
 
     function startPolling() {
       if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(refreshStatus, 30000);
+      pollInterval = setInterval(refreshStatus, 10000); // 10s — fast fallback for live event
     }
 
     async function refreshStatus() {

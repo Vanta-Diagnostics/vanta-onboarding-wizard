@@ -615,7 +615,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@ec52670/qrcode.min.js"></script>
   <script>
     // =========================================================================
     // CONFIG
@@ -671,16 +671,28 @@
 
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // QR Code (non-critical — guarded so the rest of init still runs)
+      // QR Code — try JS library first, fall back to API-generated image
       try {
-        new QRCode(document.getElementById('qrcode'), {
-          text: WIZARD_URL,
-          width: 200,
-          height: 200,
-          colorDark: '#1C75BA',
-          correctLevel: QRCode.CorrectLevel.H
-        });
-      } catch (e) { console.warn('QR code generation failed:', e); }
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(document.getElementById('qrcode'), {
+            text: WIZARD_URL,
+            width: 200,
+            height: 200,
+            colorDark: '#000000',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } else {
+          throw new Error('QRCode library not loaded');
+        }
+      } catch (e) {
+        console.warn('QR JS failed, using image fallback:', e);
+        $('#qrcode').html(
+          '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
+          encodeURIComponent(WIZARD_URL) +
+          '&color=00-00-00&format=png" alt="QR Code" width="200" height="200" ' +
+          'style="display:block;" />'
+        );
+      }
       $('#wizardUrl').text(WIZARD_URL);
 
       // Clock
@@ -700,6 +712,11 @@
 
       // Keyboard shortcuts
       $(document).on('keydown', handleKeyboard);
+
+      // Delegated click handler for email cells (avoids inline onclick / single-quote issues)
+      $(document).on('click', '.email-cell', function() {
+        copyEmail(this, $(this).data('email'));
+      });
     }
 
     // =========================================================================
@@ -724,14 +741,14 @@
 
       if (eventType === 'INSERT') {
         allUsers.push(record);
-        addActivity(record.first_name + ' ' + record.last_name.charAt(0) + '.', 'registered');
+        addActivity(escHtml(record.first_name) + ' ' + escHtml(record.last_name.charAt(0)) + '.', 'registered');
       } else if (eventType === 'UPDATE') {
         const idx = allUsers.findIndex(u => String(u.id) === String(record.id));
         if (idx >= 0) {
           const oldStatus = allUsers[idx].status;
           allUsers[idx] = record;
           if (oldStatus !== record.status) {
-            addActivity(record.first_name + ' ' + record.last_name.charAt(0) + '.', statusLabel(record.status));
+            addActivity(escHtml(record.first_name) + ' ' + escHtml(record.last_name.charAt(0)) + '.', statusLabel(record.status));
           }
         }
       } else if (eventType === 'DELETE') {
@@ -864,32 +881,31 @@
 
     function renderDevRow(u, num) {
       const email = u.platform === 'ios' ? (u.apple_id_email || 'N/A') : u.vanta_email;
-      const label = u.platform === 'ios' ? 'Apple ID' : 'Vanta Email';
       return '<tr>' +
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
-        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
-        '<td><span class="platform-badge ' + u.platform + '">' + (u.platform === 'ios' ? 'iOS' : 'Android') + '</span></td>' +
-        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(email) + '\')" title="Click to copy">' + escHtml(email) + '<span class="copy-hint">click to copy</span></span></td>' +
-        '<td><span class="region-badge">' + u.region + '</span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'dev_invite_sent\')">Mark Sent</button></td>' +
+        '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
+        '<td><span class="platform-badge ' + escAttr(u.platform) + '">' + (u.platform === 'ios' ? 'iOS' : 'Android') + '</span></td>' +
+        '<td><span class="email-cell" data-email="' + escAttr(email) + '" title="Click to copy">' + escHtml(email) + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><span class="region-badge">' + escHtml(u.region) + '</span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'dev_invite_sent\')">Mark Sent</button></td>' +
         '</tr>';
     }
 
     function renderTFRow(u, num) {
       return '<tr>' +
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
-        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
-        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(u.apple_id_email || '') + '\')" title="Click to copy">' + escHtml(u.apple_id_email || 'N/A') + '<span class="copy-hint">click to copy</span></span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'testflight_sent\')">Mark Sent</button></td>' +
+        '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
+        '<td><span class="email-cell" data-email="' + escAttr(u.apple_id_email || '') + '" title="Click to copy">' + escHtml(u.apple_id_email || 'N/A') + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'testflight_sent\')">Mark Sent</button></td>' +
         '</tr>';
     }
 
     function renderCredsRow(u, num) {
       return '<tr>' +
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
-        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
-        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(u.vanta_email) + '\')" title="Click to copy">' + escHtml(u.vanta_email) + '<span class="copy-hint">click to copy</span></span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'credentials_sent\')">Mark Sent</button></td>' +
+        '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
+        '<td><span class="email-cell" data-email="' + escAttr(u.vanta_email) + '" title="Click to copy">' + escHtml(u.vanta_email) + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'credentials_sent\')">Mark Sent</button></td>' +
         '</tr>';
     }
 
@@ -996,6 +1012,10 @@
     // =========================================================================
     function escHtml(str) {
       return $('<div>').text(str).html();
+    }
+
+    function escAttr(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     function showToast(msg, isError) {

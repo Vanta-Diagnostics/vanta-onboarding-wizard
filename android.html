@@ -351,14 +351,23 @@
       }
 
       if (!apkUrl) {
-        $('#downloadBtn').text('No APK available yet').css({ opacity: 0.5, cursor: 'not-allowed' });
+        $('#downloadBtn')
+          .text('No APK available yet')
+          .css({ opacity: 0.5, cursor: 'not-allowed' })
+          .removeAttr('onclick');
       }
     });
 
     function downloadAPK() {
-      if (apkUrl) {
-        window.location.href = apkUrl;
-      }
+      if (!apkUrl) return;
+      // Use a dynamic anchor to trigger download without navigating away
+      var a = document.createElement('a');
+      a.href = apkUrl;
+      a.download = '';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     function toggleFaq(el) {
