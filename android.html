@@ -215,7 +215,7 @@
   <!-- Hero -->
   <div class="hero">
     <div class="hero-logo">VANTA <span>Diagnostics</span></div>
-    <div class="app-icon">&#128202;</div>
+    <div class="app-icon"><img src="img/vanta-emblem.png" alt="Vanta" style="width:56px;height:56px;object-fit:contain;"></div>
     <div class="app-name">Vanta Sales</div>
     <div class="app-version" id="appVersion">Latest Version</div>
     <div class="app-publisher">Vanta Diagnostics</div>
@@ -223,7 +223,7 @@
 
   <!-- Content -->
   <div class="content">
-    <a class="download-btn" id="downloadBtn" href="#" onclick="downloadAPK()">
+    <a class="download-btn" id="downloadBtn" href="javascript:void(0)" onclick="downloadAPK()">
       <span class="icon">&#11015;</span> Download Latest Version
     </a>
 
@@ -342,7 +342,7 @@
             // File size
             const sizeMB = (apkFile.metadata?.size || apkFile.size || 0) / (1024 * 1024);
             if (sizeMB > 0) {
-              $('#fileInfo').text('Android APK &bull; ' + sizeMB.toFixed(1) + ' MB &bull; Requires Android 8.0+');
+              $('#fileInfo').html('Android APK &bull; ' + sizeMB.toFixed(1) + ' MB &bull; Requires Android 8.0+');
             }
           }
         }

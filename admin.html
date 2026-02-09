@@ -492,7 +492,7 @@
     <div class="login-card">
       <h2>Admin Dashboard</h2>
       <p>Enter the admin password to continue.</p>
-      <form onsubmit="return checkPassword()">
+      <form id="adminLoginForm">
         <input type="password" id="adminPassword" placeholder="Password" autofocus>
         <button type="submit" class="btn-login">Enter</button>
       </form>
@@ -633,35 +633,54 @@
     let allUsers = [];
     let activeTab = 'dev';
     let activityLog = [];
+    let initialized = false;
 
     // =========================================================================
-    // AUTH
+    // AUTH  (session persists across reloads via sessionStorage)
     // =========================================================================
-    function checkPassword() {
-      if ($('#adminPassword').val() === ADMIN_PASSWORD) {
-        $('#loginOverlay').fadeOut(200);
-        init();
-      } else {
-        $('#adminPassword').css('border-color', 'var(--vanta-error)').val('').attr('placeholder', 'Wrong password');
-        setTimeout(() => $('#adminPassword').css('border-color', '').attr('placeholder', 'Password'), 2000);
+    $(document).ready(function() {
+      // Resume previous session — avoids re-prompting after accidental refresh
+      if (sessionStorage.getItem('admin_authed') === '1') {
+        $('#loginOverlay').hide();
+        try { init(); } catch (e) { console.error('Init error:', e); }
+        return;
       }
-      return false;
-    }
+
+      // Login form handler — e.preventDefault() guarantees no page reload
+      $('#adminLoginForm').on('submit', function(e) {
+        e.preventDefault();
+        if ($('#adminPassword').val() === ADMIN_PASSWORD) {
+          sessionStorage.setItem('admin_authed', '1');
+          $('#loginOverlay').fadeOut(200);
+          try { init(); } catch (e) { console.error('Init error:', e); }
+        } else {
+          $('#adminPassword').css('border-color', 'var(--vanta-error)').val('').attr('placeholder', 'Wrong password');
+          setTimeout(function() {
+            $('#adminPassword').css('border-color', '').attr('placeholder', 'Password');
+          }, 2000);
+        }
+      });
+    });
 
     // =========================================================================
     // INIT
     // =========================================================================
     function init() {
+      if (initialized) return;
+      initialized = true;
+
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // QR Code
-      new QRCode(document.getElementById('qrcode'), {
-        text: WIZARD_URL,
-        width: 200,
-        height: 200,
-        colorDark: '#1C75BA',
-        correctLevel: QRCode.CorrectLevel.H
-      });
+      // QR Code (non-critical — guarded so the rest of init still runs)
+      try {
+        new QRCode(document.getElementById('qrcode'), {
+          text: WIZARD_URL,
+          width: 200,
+          height: 200,
+          colorDark: '#1C75BA',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      } catch (e) { console.warn('QR code generation failed:', e); }
       $('#wizardUrl').text(WIZARD_URL);
 
       // Clock
@@ -707,7 +726,7 @@
         allUsers.push(record);
         addActivity(record.first_name + ' ' + record.last_name.charAt(0) + '.', 'registered');
       } else if (eventType === 'UPDATE') {
-        const idx = allUsers.findIndex(u => u.id === record.id);
+        const idx = allUsers.findIndex(u => String(u.id) === String(record.id));
         if (idx >= 0) {
           const oldStatus = allUsers[idx].status;
           allUsers[idx] = record;
@@ -716,7 +735,7 @@
           }
         }
       } else if (eventType === 'DELETE') {
-        allUsers = allUsers.filter(u => u.id !== (record && record.id));
+        allUsers = allUsers.filter(u => String(u.id) !== String(record && record.id));
       }
 
       updateStats();
