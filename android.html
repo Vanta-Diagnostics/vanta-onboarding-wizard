@@ -323,7 +323,10 @@
             sortBy: { column: 'created_at', order: 'desc' }
           });
 
-        if (data && data.length > 0) {
+        if (error) {
+          console.error('Storage list error:', error);
+          $('#fileInfo').html('<span style="color:#FCA5A5;">Unable to check for updates &bull; ' + (error.message || 'Storage error') + '</span>');
+        } else if (data && data.length > 0) {
           // Find the first .apk file
           const apkFile = data.find(f => f.name.toLowerCase().endsWith('.apk'));
           if (apkFile) {

@@ -591,7 +591,8 @@
     $(document).ready(function() {
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       checkExistingSession();
-      preloadOCR();
+      // NOTE: preloadOCR() is NOT called here — it runs after platform is known
+      // (inside checkExistingSession or setPlatform) to avoid loading ~40MB on Android.
 
       // Reconnect on visibility change (e.g., user switches back from Settings/email)
       document.addEventListener('visibilitychange', function() {
@@ -615,6 +616,7 @@
           if (data && !error) {
             userPlatform = data.platform || 'ios';
             currentStatus = data.status;
+            preloadOCR(); // Now platform is known — only loads for iOS
             showStepForStatus(data);
             subscribeRealtime();
             startPolling();
@@ -625,14 +627,22 @@
         userId = null;
       }
       showStep('register');
+      // Default platform is 'ios' — preload OCR so it's ready by the screenshot step
+      preloadOCR();
     }
 
     // =========================================================================
     // OCR PRE-LOADING
     // =========================================================================
+    let ocrPreloaded = false; // Guard flag — prevents duplicate script insertion
+
     function preloadOCR() {
       // Only iOS users need OCR — skip for Android to save ~40MB of mobile memory
       if (userPlatform !== 'ios') return;
+      // Prevent duplicate loads (could be called from checkExistingSession + setPlatform)
+      if (ocrPreloaded) return;
+      ocrPreloaded = true;
+
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
       script.onload = function() {
@@ -655,6 +665,7 @@
       if (p === 'ios') {
         $('#toggleIos').addClass('active-ios');
         $('#toggleAndroid').removeClass('active-android');
+        preloadOCR(); // Start loading OCR when user picks iOS
       } else {
         $('#toggleAndroid').addClass('active-android');
         $('#toggleIos').removeClass('active-ios');
@@ -683,7 +694,7 @@
       try {
         const { data: existing } = await supabase
           .from(TABLE)
-          .select('id, status, platform')
+          .select('*')
           .eq('vanta_email', email)
           .single();
 
@@ -795,11 +806,17 @@
         ocrWorker = null;
 
         $('#ocrProgress').hide();
+        // Re-render upload zone with a new file input so "try another" works
         $('#uploadZone').show().html(
           '<div class="icon">&#9989;</div>' +
           '<div style="font-size:14px;color:rgba(255,255,255,0.6);">Screenshot processed</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">Tap to try another</div>'
+          '<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">Tap to try another</div>' +
+          '<input type="file" id="screenshotInput" accept="image/*" class="hidden">'
         );
+        // Re-attach change listener to the new file input
+        document.getElementById('screenshotInput').addEventListener('change', function(ev) {
+          if (ev.target.files.length) processImage(ev.target.files[0]);
+        });
       } catch (err) {
         showError('OCR failed. Please type your Apple ID email manually.');
         $('#ocrProgress').hide();
