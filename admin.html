@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanta Onboarding - Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --vanta-purple: #662D8F;
+      --vanta-indigo: #49489F;
+      --vanta-blue: #1C75BA;
+      --vanta-teal: #3CC194;
+      --vanta-success: #10B981;
+      --vanta-warning: #F59E0B;
+      --vanta-error: #EF4444;
+      --surface-dark: #1E1E1E;
+      --surface-darker: #141414;
+      --surface-card: #252525;
+      --neutral-grey: #6B7280;
+      --light-grey: #E5E7EB;
+      --dark-grey: #374151;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface-darker);
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* ===== DISPLAY SECTION (Screen Share) ===== */
+    .display-section {
+      background: linear-gradient(135deg, var(--vanta-purple) 0%, var(--vanta-indigo) 25%, var(--vanta-blue) 50%, var(--vanta-teal) 100%);
+      padding: 28px 32px;
+      position: relative;
+    }
+
+    .display-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .display-logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .display-logo span { font-weight: 400; font-size: 14px; opacity: 0.7; margin-left: 6px; }
+
+    .qr-and-stats {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+
+    .qr-block {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      flex-shrink: 0;
+    }
+
+    #qrcode { width: 200px; height: 200px; }
+    #qrcode canvas, #qrcode img { width: 200px !important; height: 200px !important; }
+
+    .qr-url {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      word-break: break-all;
+      max-width: 232px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      flex: 1;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 14px 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 4px;
+    }
+
+    .stat-num {
+      font-size: 28px;
+      font-weight: 700;
+      font-feature-settings: "tnum";
+      line-height: 1;
+    }
+
+    .overall-progress {
+      margin-top: 16px;
+    }
+
+    .progress-bar-outer {
+      height: 8px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--vanta-teal), #6EDBB5);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ===== ACTIVITY FEED ===== */
+    .activity-feed {
+      margin-top: 16px;
+      max-height: 60px;
+      overflow: hidden;
+    }
+
+    .activity-item {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      padding: 2px 0;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .activity-item .name { color: rgba(255,255,255,0.9); font-weight: 600; }
+    .activity-item .time { color: rgba(255,255,255,0.3); margin-left: 8px; font-size: 11px; }
+
+    /* ===== ADMIN WORK SECTION ===== */
+    .admin-section {
+      padding: 20px 32px 40px;
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .admin-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .filter-bar select {
+      background: var(--surface-card);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    .filter-bar select option { background: var(--surface-card); }
+
+    /* Queue Tabs */
+    .queue-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .queue-tab {
+      padding: 10px 20px;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-bottom: none;
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .queue-tab:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+
+    .queue-tab.active {
+      background: var(--surface-card);
+      color: #fff;
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .queue-tab .badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-left: 6px;
+      font-weight: 700;
+    }
+
+    .queue-panel {
+      background: var(--surface-card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0 12px 12px 12px;
+      overflow: hidden;
+    }
+
+    /* Table */
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .queue-table th {
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+      position: sticky;
+      top: 0;
+      background: var(--surface-card);
+    }
+
+    .queue-table td {
+      padding: 10px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+
+    .queue-table tr:hover td {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .queue-table .name-cell {
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .queue-table .platform-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .platform-badge.ios {
+      background: rgba(28,117,186,0.2);
+      color: #7CB9E8;
+    }
+
+    .platform-badge.android {
+      background: rgba(60,193,148,0.2);
+      color: #6EDBB5;
+    }
+
+    .email-cell {
+      color: rgba(255,255,255,0.7);
+      font-family: monospace;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .email-cell:hover {
+      background: rgba(28,117,186,0.15);
+      color: #7CB9E8;
+    }
+
+    .email-cell.copied {
+      background: rgba(16,185,129,0.2);
+      color: var(--vanta-success);
+    }
+
+    .email-cell .copy-hint {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      display: none;
+      position: absolute;
+      right: -4px;
+      top: -14px;
+    }
+
+    .email-cell:hover .copy-hint { display: block; color: #7CB9E8; }
+    .email-cell.copied .copy-hint { display: block; color: var(--vanta-success); }
+
+    .region-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.5);
+    }
+
+    .btn-mark {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.8);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-mark:hover {
+      background: rgba(16,185,129,0.15);
+      border-color: var(--vanta-success);
+      color: var(--vanta-success);
+    }
+
+    .btn-mark:active { transform: scale(0.96); }
+
+    .btn-bulk {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(16,185,129,0.3);
+      background: rgba(16,185,129,0.1);
+      color: var(--vanta-success);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-bulk:hover {
+      background: rgba(16,185,129,0.2);
+      border-color: var(--vanta-success);
+    }
+
+    .queue-scroll {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .queue-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(255,255,255,0.3);
+      font-size: 14px;
+    }
+
+    .shortcuts-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 12px;
+    }
+
+    .shortcuts-hint kbd {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 11px;
+      font-family: 'IBM Plex Sans', monospace;
+    }
+
+    /* Login overlay */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .login-card {
+      background: var(--surface-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 380px;
+      text-align: center;
+    }
+
+    .login-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 20px;
+    }
+
+    .login-card input {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      width: 100%;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .login-card input:focus {
+      outline: none;
+      border-color: var(--vanta-blue);
+      box-shadow: 0 0 0 3px rgba(28,117,186,0.25);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, var(--vanta-blue), var(--vanta-teal));
+      border: none;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface-card);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--vanta-success);
+      z-index: 9999;
+      animation: slideUp 0.3s ease;
+      display: none;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Overlay -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <h2>Admin Dashboard</h2>
+      <p>Enter the admin password to continue.</p>
+      <form onsubmit="return checkPassword()">
+        <input type="password" id="adminPassword" placeholder="Password" autofocus>
+        <button type="submit" class="btn-login">Enter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- DISPLAY SECTION (Screen Share) -->
+  <div class="display-section">
+    <div class="display-header">
+      <div class="display-logo">VANTA <span>Device Onboarding</span></div>
+      <div style="font-size:12px;opacity:0.6;" id="clock"></div>
+    </div>
+
+    <div class="qr-and-stats">
+      <div>
+        <div class="qr-block"><div id="qrcode"></div></div>
+        <div class="qr-url" id="wizardUrl"></div>
+      </div>
+
+      <div style="flex:1;">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Registered</div>
+            <div class="stat-num" id="statRegistered">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Apple ID Ready</div>
+            <div class="stat-num" id="statAppleId">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Invites Sent</div>
+            <div class="stat-num" id="statInvites">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Accepted</div>
+            <div class="stat-num" id="statAccepted">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">TestFlight Sent</div>
+            <div class="stat-num" id="statTestFlight">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">App Installed</div>
+            <div class="stat-num" id="statInstalled">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Creds Sent</div>
+            <div class="stat-num" id="statCredsSent">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" style="color:#6EDBB5;">Complete</div>
+            <div class="stat-num" style="color:#6EDBB5;" id="statComplete">0</div>
+          </div>
+        </div>
+
+        <div class="overall-progress">
+          <div class="progress-label">
+            <span>Overall Progress</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="progressBar"></div>
+          </div>
+        </div>
+
+        <div class="activity-feed" id="activityFeed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN WORK SECTION -->
+  <div class="admin-section">
+    <div class="admin-header">
+      <div class="admin-title">Queue Management</div>
+      <div class="filter-bar">
+        <select id="regionFilter" onchange="renderActiveQueue()">
+          <option value="">All Regions</option>
+          <option value="East">East</option>
+          <option value="West">West</option>
+          <option value="MidWest">MidWest</option>
+          <option value="Central">Central</option>
+          <option value="National">National</option>
+        </select>
+        <button class="btn-bulk" id="bulkBtn" onclick="bulkMarkSent()">Mark All Sent</button>
+      </div>
+    </div>
+
+    <div class="queue-tabs">
+      <div class="queue-tab active" data-queue="dev" onclick="switchTab('dev')">
+        Dev Invite <span class="badge bg-primary" id="devCount">0</span>
+      </div>
+      <div class="queue-tab" data-queue="testflight" onclick="switchTab('testflight')">
+        TestFlight <span class="badge bg-info" id="tfCount">0</span>
+      </div>
+      <div class="queue-tab" data-queue="creds" onclick="switchTab('creds')">
+        Credentials <span class="badge bg-success" id="credsCount">0</span>
+      </div>
+    </div>
+
+    <div class="queue-panel">
+      <div class="queue-scroll" id="queueScroll">
+        <table class="queue-table">
+          <thead id="queueHead"></thead>
+          <tbody id="queueBody"></tbody>
+        </table>
+        <div class="queue-empty" id="queueEmpty" style="display:none;">No users in this queue</div>
+      </div>
+    </div>
+
+    <div class="shortcuts-hint">
+      <kbd>Enter</kbd> Mark top user sent &nbsp;
+      <kbd>1</kbd> Dev Invite tab &nbsp;
+      <kbd>2</kbd> TestFlight tab &nbsp;
+      <kbd>3</kbd> Credentials tab
+    </div>
+  </div>
+
+  <div class="toast-notification" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script>
+    // =========================================================================
+    // CONFIG
+    // =========================================================================
+    const SUPABASE_URL = 'https://jnqspdbtwyrfdlambvkb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpucXNwZGJ0d3lyZmRsYW1idmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1MTU0MzAsImV4cCI6MjA1MzA5MTQzMH0.EWba2SLuOEVO6-a7MSDu3TZR1bNX4VnYNUB4k7JSeVg';
+    const TABLE = 'onboarding_users';
+    const ADMIN_PASSWORD = 'vanta2026!onboard';
+    const WIZARD_URL = 'https://vanta-diagnostics.github.io/vanta-onboarding-wizard/';
+
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    let sb;
+    let allUsers = [];
+    let activeTab = 'dev';
+    let activityLog = [];
+
+    // =========================================================================
+    // AUTH
+    // =========================================================================
+    function checkPassword() {
+      if ($('#adminPassword').val() === ADMIN_PASSWORD) {
+        $('#loginOverlay').fadeOut(200);
+        init();
+      } else {
+        $('#adminPassword').css('border-color', 'var(--vanta-error)').val('').attr('placeholder', 'Wrong password');
+        setTimeout(() => $('#adminPassword').css('border-color', '').attr('placeholder', 'Password'), 2000);
+      }
+      return false;
+    }
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    function init() {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // QR Code
+      new QRCode(document.getElementById('qrcode'), {
+        text: WIZARD_URL,
+        width: 200,
+        height: 200,
+        colorDark: '#1C75BA',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      $('#wizardUrl').text(WIZARD_URL);
+
+      // Clock
+      setInterval(() => {
+        $('#clock').text(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      }, 1000);
+
+      // Load data
+      fetchAllUsers();
+
+      // Realtime
+      sb.channel('admin-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, (payload) => {
+          handleRealtimeEvent(payload);
+        })
+        .subscribe();
+
+      // Keyboard shortcuts
+      $(document).on('keydown', handleKeyboard);
+    }
+
+    // =========================================================================
+    // DATA
+    // =========================================================================
+    async function fetchAllUsers() {
+      const { data, error } = await sb
+        .from(TABLE)
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        allUsers = data;
+        updateStats();
+        renderActiveQueue();
+      }
+    }
+
+    function handleRealtimeEvent(payload) {
+      const eventType = payload.eventType;
+      const record = payload.new || payload.old;
+
+      if (eventType === 'INSERT') {
+        allUsers.push(record);
+        addActivity(record.first_name + ' ' + record.last_name.charAt(0) + '.', 'registered');
+      } else if (eventType === 'UPDATE') {
+        const idx = allUsers.findIndex(u => u.id === record.id);
+        if (idx >= 0) {
+          const oldStatus = allUsers[idx].status;
+          allUsers[idx] = record;
+          if (oldStatus !== record.status) {
+            addActivity(record.first_name + ' ' + record.last_name.charAt(0) + '.', statusLabel(record.status));
+          }
+        }
+      } else if (eventType === 'DELETE') {
+        allUsers = allUsers.filter(u => u.id !== (record && record.id));
+      }
+
+      updateStats();
+      renderActiveQueue();
+    }
+
+    // =========================================================================
+    // STATS
+    // =========================================================================
+    function updateStats() {
+      const counts = {
+        registered: 0, apple_id_confirmed: 0, dev_invite_sent: 0,
+        dev_invite_accepted: 0, testflight_sent: 0, app_downloaded: 0,
+        credentials_sent: 0, complete: 0
+      };
+
+      allUsers.forEach(u => {
+        // Count all users who have REACHED or PASSED each status
+        const statusOrder = ['registered', 'apple_id_confirmed', 'dev_invite_sent', 'dev_invite_accepted', 'testflight_sent', 'app_downloaded', 'credentials_sent', 'complete'];
+        const userIdx = statusOrder.indexOf(u.status);
+        for (let i = 0; i <= userIdx; i++) {
+          counts[statusOrder[i]]++;
+        }
+      });
+
+      $('#statRegistered').text(allUsers.length);
+      $('#statAppleId').text(counts.apple_id_confirmed);
+      $('#statInvites').text(counts.dev_invite_sent);
+      $('#statAccepted').text(counts.dev_invite_accepted);
+      $('#statTestFlight').text(counts.testflight_sent);
+      $('#statInstalled').text(counts.app_downloaded);
+      $('#statCredsSent').text(counts.credentials_sent);
+      $('#statComplete').text(counts.complete);
+
+      // Queue counts (users AT that specific status, not past it)
+      const devQueue = allUsers.filter(u => u.status === 'apple_id_confirmed');
+      const tfQueue = allUsers.filter(u => u.status === 'dev_invite_accepted' && u.platform === 'ios');
+      const credsQueue = allUsers.filter(u => u.status === 'app_downloaded');
+
+      $('#devCount').text(devQueue.length);
+      $('#tfCount').text(tfQueue.length);
+      $('#credsCount').text(credsQueue.length);
+
+      // Progress
+      const total = allUsers.length || 1;
+      const completeCount = allUsers.filter(u => u.status === 'credentials_sent' || u.status === 'complete').length;
+      const pct = Math.round((completeCount / total) * 100);
+      $('#progressPercent').text(pct + '%');
+      $('#progressBar').css('width', pct + '%');
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        'registered': 'registered',
+        'apple_id_confirmed': 'confirmed Apple ID',
+        'dev_invite_sent': 'invite sent',
+        'dev_invite_accepted': 'accepted invite',
+        'testflight_sent': 'TestFlight sent',
+        'app_downloaded': 'installed app',
+        'credentials_sent': 'credentials sent',
+        'complete': 'completed'
+      };
+      return labels[status] || status;
+    }
+
+    // =========================================================================
+    // ACTIVITY FEED
+    // =========================================================================
+    function addActivity(name, action) {
+      const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      activityLog.unshift({ name, action, time });
+      if (activityLog.length > 20) activityLog.pop();
+
+      const html = activityLog.slice(0, 3).map(a =>
+        '<div class="activity-item"><span class="name">' + a.name + '</span> ' + a.action + '<span class="time">' + a.time + '</span></div>'
+      ).join('');
+      $('#activityFeed').html(html);
+    }
+
+    // =========================================================================
+    // QUEUE RENDERING
+    // =========================================================================
+    function switchTab(tab) {
+      activeTab = tab;
+      $('.queue-tab').removeClass('active');
+      $(`.queue-tab[data-queue="${tab}"]`).addClass('active');
+      renderActiveQueue();
+    }
+
+    function renderActiveQueue() {
+      const region = $('#regionFilter').val();
+      let users = [];
+      let headers = '';
+      let rowFn;
+
+      switch (activeTab) {
+        case 'dev':
+          users = allUsers.filter(u => u.status === 'apple_id_confirmed');
+          headers = '<tr><th>#</th><th>Name</th><th>Platform</th><th>Email to Copy</th><th>Region</th><th>Action</th></tr>';
+          rowFn = renderDevRow;
+          break;
+        case 'testflight':
+          users = allUsers.filter(u => u.status === 'dev_invite_accepted' && u.platform === 'ios');
+          headers = '<tr><th>#</th><th>Name</th><th>Apple ID Email</th><th>Action</th></tr>';
+          rowFn = renderTFRow;
+          break;
+        case 'creds':
+          users = allUsers.filter(u => u.status === 'app_downloaded');
+          headers = '<tr><th>#</th><th>Name</th><th>Vanta Email</th><th>Action</th></tr>';
+          rowFn = renderCredsRow;
+          break;
+      }
+
+      if (region) users = users.filter(u => u.region === region);
+
+      $('#queueHead').html(headers);
+
+      if (users.length === 0) {
+        $('#queueBody').html('');
+        $('#queueEmpty').show();
+      } else {
+        $('#queueEmpty').hide();
+        $('#queueBody').html(users.map((u, i) => rowFn(u, i + 1)).join(''));
+      }
+    }
+
+    function renderDevRow(u, num) {
+      const email = u.platform === 'ios' ? (u.apple_id_email || 'N/A') : u.vanta_email;
+      const label = u.platform === 'ios' ? 'Apple ID' : 'Vanta Email';
+      return '<tr>' +
+        '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
+        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
+        '<td><span class="platform-badge ' + u.platform + '">' + (u.platform === 'ios' ? 'iOS' : 'Android') + '</span></td>' +
+        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(email) + '\')" title="Click to copy">' + escHtml(email) + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><span class="region-badge">' + u.region + '</span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'dev_invite_sent\')">Mark Sent</button></td>' +
+        '</tr>';
+    }
+
+    function renderTFRow(u, num) {
+      return '<tr>' +
+        '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
+        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
+        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(u.apple_id_email || '') + '\')" title="Click to copy">' + escHtml(u.apple_id_email || 'N/A') + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'testflight_sent\')">Mark Sent</button></td>' +
+        '</tr>';
+    }
+
+    function renderCredsRow(u, num) {
+      return '<tr>' +
+        '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
+        '<td class="name-cell">' + u.first_name + ' ' + u.last_name + '</td>' +
+        '<td><span class="email-cell" onclick="copyEmail(this, \'' + escHtml(u.vanta_email) + '\')" title="Click to copy">' + escHtml(u.vanta_email) + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><button class="btn-mark" onclick="markSent(\'' + u.id + '\', \'credentials_sent\')">Mark Sent</button></td>' +
+        '</tr>';
+    }
+
+    // =========================================================================
+    // ACTIONS
+    // =========================================================================
+    async function markSent(id, newStatus) {
+      const { error } = await sb
+        .from(TABLE)
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) {
+        showToast('Error: ' + error.message, true);
+      } else {
+        showToast('Marked as sent');
+      }
+    }
+
+    async function bulkMarkSent() {
+      const region = $('#regionFilter').val();
+      let users = [];
+      let newStatus = '';
+
+      switch (activeTab) {
+        case 'dev':
+          users = allUsers.filter(u => u.status === 'apple_id_confirmed');
+          newStatus = 'dev_invite_sent';
+          break;
+        case 'testflight':
+          users = allUsers.filter(u => u.status === 'dev_invite_accepted' && u.platform === 'ios');
+          newStatus = 'testflight_sent';
+          break;
+        case 'creds':
+          users = allUsers.filter(u => u.status === 'app_downloaded');
+          newStatus = 'credentials_sent';
+          break;
+      }
+
+      if (region) users = users.filter(u => u.region === region);
+
+      if (users.length === 0) {
+        showToast('No users in queue');
+        return;
+      }
+
+      if (!confirm('Mark ' + users.length + ' user(s) as sent?')) return;
+
+      const ids = users.map(u => u.id);
+      const { error } = await sb
+        .from(TABLE)
+        .update({ status: newStatus })
+        .in('id', ids);
+
+      if (error) {
+        showToast('Bulk update error: ' + error.message, true);
+      } else {
+        showToast('Marked ' + ids.length + ' user(s) as sent');
+      }
+    }
+
+    function copyEmail(el, email) {
+      navigator.clipboard.writeText(email).then(() => {
+        $(el).addClass('copied');
+        $(el).find('.copy-hint').text('copied!');
+        setTimeout(() => {
+          $(el).removeClass('copied');
+          $(el).find('.copy-hint').text('click to copy');
+        }, 1500);
+      });
+    }
+
+    // =========================================================================
+    // KEYBOARD SHORTCUTS
+    // =========================================================================
+    function handleKeyboard(e) {
+      // Don't trigger if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          markTopUser();
+          break;
+        case '1':
+          switchTab('dev');
+          break;
+        case '2':
+          switchTab('testflight');
+          break;
+        case '3':
+          switchTab('creds');
+          break;
+      }
+    }
+
+    function markTopUser() {
+      const firstBtn = $('#queueBody .btn-mark').first();
+      if (firstBtn.length) firstBtn.click();
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+    function escHtml(str) {
+      return $('<div>').text(str).html();
+    }
+
+    function showToast(msg, isError) {
+      const toast = $('#toast');
+      toast.text(msg).css('border-color', isError ? 'var(--vanta-error)' : 'rgba(16,185,129,0.3)')
+           .css('color', isError ? 'var(--vanta-error)' : 'var(--vanta-success)')
+           .show();
+      setTimeout(() => toast.fadeOut(200), 2500);
+    }
+  </script>
+</body>
+</html>

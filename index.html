@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vanta Sales - Device Setup</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --vanta-purple: #662D8F;
+      --vanta-indigo: #49489F;
+      --vanta-blue: #1C75BA;
+      --vanta-teal: #3CC194;
+      --vanta-success: #10B981;
+      --vanta-warning: #F59E0B;
+      --vanta-error: #EF4444;
+      --surface-dark: #1E1E1E;
+      --surface-light: #F8FAFC;
+      --neutral-grey: #6B7280;
+      --light-grey: #E5E7EB;
+      --dark-grey: #374151;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface-dark);
+      color: #fff;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .vanta-gradient {
+      background: linear-gradient(135deg, var(--vanta-purple) 0%, var(--vanta-indigo) 25%, var(--vanta-blue) 50%, var(--vanta-teal) 100%);
+    }
+
+    .header {
+      padding: 20px 16px 16px;
+      text-align: center;
+    }
+
+    .header img {
+      height: 28px;
+      filter: brightness(0) invert(1);
+    }
+
+    .wizard-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px 32px;
+    }
+
+    .step-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 28px 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .step-badge.ios { background: rgba(28,117,186,0.25); color: #7CB9E8; }
+    .step-badge.android { background: rgba(60,193,148,0.25); color: #6EDBB5; }
+    .step-badge.neutral { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+
+    .step-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
+    }
+
+    .step-subtitle {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 6px;
+    }
+
+    .form-control, .form-select {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--vanta-blue);
+      box-shadow: 0 0 0 3px rgba(28,117,186,0.25);
+      color: #fff;
+    }
+
+    .form-control::placeholder { color: rgba(255,255,255,0.3); }
+
+    .form-select option { background: var(--surface-dark); color: #fff; }
+
+    .btn-vanta {
+      background: linear-gradient(135deg, var(--vanta-blue), var(--vanta-teal));
+      border: none;
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      width: 100%;
+      transition: opacity 0.2s, transform 0.1s;
+      cursor: pointer;
+    }
+
+    .btn-vanta:hover { opacity: 0.9; color: #fff; }
+    .btn-vanta:active { transform: scale(0.98); }
+    .btn-vanta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-outline-vanta {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.8);
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      width: 100%;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-outline-vanta:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.3);
+      color: #fff;
+    }
+
+    .platform-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .platform-toggle .toggle-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .platform-toggle .toggle-btn.active-ios {
+      border-color: var(--vanta-blue);
+      background: rgba(28,117,186,0.15);
+      color: #7CB9E8;
+    }
+
+    .platform-toggle .toggle-btn.active-android {
+      border-color: var(--vanta-teal);
+      background: rgba(60,193,148,0.15);
+      color: #6EDBB5;
+    }
+
+    .queue-display {
+      text-align: center;
+      padding: 32px 0;
+    }
+
+    .queue-number {
+      font-size: 56px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--vanta-blue), var(--vanta-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .queue-label {
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .spinner-dots {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .spinner-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--vanta-blue);
+      animation: dotPulse 1.4s ease-in-out infinite;
+    }
+
+    .spinner-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .spinner-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotPulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .email-highlight {
+      background: rgba(28,117,186,0.2);
+      border: 1px solid rgba(28,117,186,0.4);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #7CB9E8;
+      text-align: center;
+      word-break: break-all;
+      margin: 16px 0;
+    }
+
+    .instruction-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    .instruction-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .instruction-list li:last-child { border-bottom: none; }
+
+    .instruction-num {
+      min-width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(28,117,186,0.2);
+      color: var(--vanta-blue);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ocr-upload-zone {
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .ocr-upload-zone:hover,
+    .ocr-upload-zone.dragover {
+      border-color: var(--vanta-blue);
+      background: rgba(28,117,186,0.08);
+    }
+
+    .ocr-upload-zone .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .ocr-progress {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .ocr-progress .spinner-border {
+      color: var(--vanta-blue);
+    }
+
+    .success-check {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(16,185,129,0.15);
+      border: 2px solid rgba(16,185,129,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+      animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .alert-glass {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #FCA5A5;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .hidden { display: none !important; }
+
+    .step-progress {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .step-progress .pip {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      transition: background 0.3s;
+    }
+
+    .step-progress .pip.active {
+      background: linear-gradient(90deg, var(--vanta-blue), var(--vanta-teal));
+    }
+
+    .step-progress .pip.done {
+      background: var(--vanta-teal);
+    }
+  </style>
+</head>
+<body class="vanta-gradient">
+  <div class="header">
+    <svg width="140" height="28" viewBox="0 0 140 28" fill="none">
+      <text x="0" y="22" font-family="IBM Plex Sans" font-weight="700" font-size="24" fill="white" letter-spacing="-0.5">VANTA</text>
+      <text x="90" y="22" font-family="IBM Plex Sans" font-weight="400" font-size="12" fill="rgba(255,255,255,0.6)">Sales</text>
+    </svg>
+  </div>
+
+  <div class="wizard-container">
+    <!-- Step Progress Pips -->
+    <div class="step-progress" id="stepProgress"></div>
+
+    <!-- Error Alert -->
+    <div class="alert-glass" id="errorAlert"></div>
+
+    <!-- STEP 1: Registration -->
+    <div id="step-register" class="step-card">
+      <span class="step-badge neutral">Step 1</span>
+      <h2 class="step-title">Let's get you set up</h2>
+      <p class="step-subtitle">Enter your details so we can send you the right invites.</p>
+
+      <form id="registerForm" autocomplete="off">
+        <div class="mb-3">
+          <label class="form-label">First Name</label>
+          <input type="text" class="form-control" id="firstName" required placeholder="Jane">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="lastName" required placeholder="Smith">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Vanta Email</label>
+          <input type="email" class="form-control" id="vantaEmail" required placeholder="jane.smith@vantadiagnostics.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Region</label>
+          <select class="form-select" id="region" required>
+            <option value="" disabled selected>Select your region</option>
+            <option value="East">East</option>
+            <option value="West">West</option>
+            <option value="MidWest">MidWest</option>
+            <option value="Central">Central</option>
+            <option value="National">National</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Your Phone</label>
+          <div class="platform-toggle">
+            <button type="button" class="toggle-btn active-ios" id="toggleIos" onclick="setPlatform('ios')">
+              &#63743; iPhone
+            </button>
+            <button type="button" class="toggle-btn" id="toggleAndroid" onclick="setPlatform('android')">
+              &#129302; Android
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn-vanta" id="registerBtn">Continue</button>
+      </form>
+    </div>
+
+    <!-- STEP 2: Apple ID Screenshot (iOS only) -->
+    <div id="step-screenshot" class="step-card hidden">
+      <span class="step-badge ios">iOS</span>
+      <h2 class="step-title">Find your Apple ID</h2>
+      <p class="step-subtitle">We need the email address associated with your Apple ID to send you the right invites.</p>
+
+      <ol class="instruction-list">
+        <li><span class="instruction-num">1</span> Open <strong>Settings</strong> on your iPhone</li>
+        <li><span class="instruction-num">2</span> Tap your <strong>name</strong> at the top (Apple Account)</li>
+        <li><span class="instruction-num">3</span> Your Apple ID email is shown below your name</li>
+        <li><span class="instruction-num">4</span> <strong>Take a screenshot</strong> (Side + Volume Up)</li>
+        <li><span class="instruction-num">5</span> Upload it below, or just type your Apple ID email</li>
+      </ol>
+
+      <div class="ocr-upload-zone" id="uploadZone" onclick="document.getElementById('screenshotInput').click()">
+        <div class="icon">&#128247;</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.6);">Tap to upload screenshot</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">or drag & drop</div>
+        <input type="file" id="screenshotInput" accept="image/*" class="hidden">
+      </div>
+
+      <div class="ocr-progress" id="ocrProgress">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.6);">Extracting Apple ID...</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Apple ID Email</label>
+        <input type="email" class="form-control" id="appleIdEmail" placeholder="your.appleid@icloud.com">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px;">Confirm or type manually if OCR didn't catch it</div>
+      </div>
+
+      <button class="btn-vanta" id="confirmAppleIdBtn" onclick="confirmAppleId()">Confirm Apple ID</button>
+    </div>
+
+    <!-- STEP 3: Wait for Dev Invite / APK Link -->
+    <div id="step-wait-dev" class="step-card hidden">
+      <span class="step-badge neutral" id="waitDevBadge">Waiting</span>
+      <h2 class="step-title" id="waitDevTitle">Hang tight...</h2>
+      <p class="step-subtitle" id="waitDevSubtitle"></p>
+
+      <div class="queue-display">
+        <div class="spinner-dots"><span></span><span></span><span></span></div>
+        <div class="queue-number" id="devQueueNum">--</div>
+        <div class="queue-label">your place in line</div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Accept Invite / Install APK -->
+    <div id="step-accept" class="step-card hidden">
+      <span class="step-badge" id="acceptBadge">Action Required</span>
+      <h2 class="step-title" id="acceptTitle"></h2>
+      <p class="step-subtitle" id="acceptSubtitle"></p>
+
+      <div id="acceptAppleIdDisplay" class="email-highlight"></div>
+
+      <div id="acceptInstructions"></div>
+
+      <button class="btn-vanta" id="acceptBtn" onclick="markAccepted()">
+        <span id="acceptBtnText"></span>
+      </button>
+    </div>
+
+    <!-- STEP 5: Wait for TestFlight (iOS only) -->
+    <div id="step-wait-tf" class="step-card hidden">
+      <span class="step-badge ios">TestFlight</span>
+      <h2 class="step-title">Almost there...</h2>
+      <p class="step-subtitle">We're sending you a TestFlight invite so you can install the app. Sit tight.</p>
+
+      <div class="queue-display">
+        <div class="spinner-dots"><span></span><span></span><span></span></div>
+        <div class="queue-number" id="tfQueueNum">--</div>
+        <div class="queue-label">your place in line</div>
+      </div>
+    </div>
+
+    <!-- STEP 6: Download App -->
+    <div id="step-download" class="step-card hidden">
+      <span class="step-badge" id="downloadBadge">Install</span>
+      <h2 class="step-title" id="downloadTitle">Install the App</h2>
+      <p class="step-subtitle" id="downloadSubtitle"></p>
+
+      <div id="downloadInstructions"></div>
+
+      <button class="btn-vanta" onclick="markDownloaded()" id="downloadBtn">I've Installed the App</button>
+    </div>
+
+    <!-- STEP 7: Wait for Credentials -->
+    <div id="step-wait-creds" class="step-card hidden">
+      <span class="step-badge neutral">Final Step</span>
+      <h2 class="step-title">One last thing...</h2>
+      <p class="step-subtitle">We're sending your login credentials to your Vanta email now.</p>
+
+      <div class="queue-display">
+        <div class="spinner-dots"><span></span><span></span><span></span></div>
+        <div class="queue-number" id="credsQueueNum">--</div>
+        <div class="queue-label">your place in line</div>
+      </div>
+    </div>
+
+    <!-- STEP 8: Complete -->
+    <div id="step-complete" class="step-card hidden">
+      <div style="text-align:center;">
+        <div class="success-check">&#10003;</div>
+        <h2 class="step-title">You're all set!</h2>
+        <p class="step-subtitle" style="margin-bottom:16px;">Check your Vanta email for your login credentials.</p>
+        <div class="email-highlight" id="completeEmail"></div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:16px;">Open the Vanta Sales app and sign in. Welcome aboard!</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    // =========================================================================
+    // CONFIG
+    // =========================================================================
+    const SUPABASE_URL = 'https://jnqspdbtwyrfdlambvkb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpucXNwZGJ0d3lyZmRsYW1idmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1MTU0MzAsImV4cCI6MjA1MzA5MTQzMH0.EWba2SLuOEVO6-a7MSDu3TZR1bNX4VnYNUB4k7JSeVg';
+    const TABLE = 'onboarding_users';
+    const APK_PAGE_URL = 'https://vanta-diagnostics.github.io/vanta-onboarding-wizard/android.html';
+
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    let supabase;
+    let userId = null;
+    let userPlatform = 'ios';
+    let currentStatus = null;
+    let realtimeChannel = null;
+    let pollInterval = null;
+    let ocrWorker = null;
+
+    // Step mapping for iOS and Android
+    const IOS_STEPS = ['register', 'screenshot', 'wait-dev', 'accept', 'wait-tf', 'download', 'wait-creds', 'complete'];
+    const ANDROID_STEPS = ['register', 'wait-dev', 'accept', 'download', 'wait-creds', 'complete'];
+
+    // Status to step mapping
+    const STATUS_STEP_MAP = {
+      'registered':          { ios: 'screenshot', android: 'wait-dev' },
+      'apple_id_confirmed':  { ios: 'wait-dev',   android: 'wait-dev' },
+      'dev_invite_sent':     { ios: 'accept',     android: 'accept' },
+      'dev_invite_accepted': { ios: 'wait-tf',    android: 'download' },
+      'testflight_sent':     { ios: 'download',   android: 'download' },
+      'app_downloaded':      { ios: 'wait-creds', android: 'wait-creds' },
+      'credentials_sent':    { ios: 'complete',   android: 'complete' },
+      'complete':            { ios: 'complete',   android: 'complete' }
+    };
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    $(document).ready(function() {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      checkExistingSession();
+      preloadOCR();
+
+      // Reconnect on visibility change
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && userId) {
+          refreshStatus();
+        }
+      });
+    });
+
+    async function checkExistingSession() {
+      userId = localStorage.getItem('onboarding_user_id');
+      if (userId) {
+        try {
+          const { data, error } = await supabase
+            .from(TABLE)
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          if (data && !error) {
+            userPlatform = data.platform || 'ios';
+            currentStatus = data.status;
+            showStepForStatus(data);
+            subscribeRealtime();
+            startPolling();
+            return;
+          }
+        } catch (e) { /* fall through */ }
+        localStorage.removeItem('onboarding_user_id');
+        userId = null;
+      }
+      showStep('register');
+    }
+
+    // =========================================================================
+    // OCR PRE-LOADING
+    // =========================================================================
+    function preloadOCR() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.onload = function() {
+        // Pre-initialize worker in background
+        if (window.Tesseract) {
+          Tesseract.createWorker('eng', 1, {
+            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+          }).then(w => { ocrWorker = w; });
+        }
+      };
+      document.head.appendChild(script);
+    }
+
+    // =========================================================================
+    // PLATFORM TOGGLE
+    // =========================================================================
+    function setPlatform(p) {
+      userPlatform = p;
+      if (p === 'ios') {
+        $('#toggleIos').addClass('active-ios');
+        $('#toggleAndroid').removeClass('active-android');
+      } else {
+        $('#toggleAndroid').addClass('active-android');
+        $('#toggleIos').removeClass('active-ios');
+      }
+    }
+
+    // =========================================================================
+    // REGISTRATION
+    // =========================================================================
+    $('#registerForm').on('submit', async function(e) {
+      e.preventDefault();
+      hideError();
+      const btn = $('#registerBtn');
+      btn.prop('disabled', true).text('Submitting...');
+
+      const email = $('#vantaEmail').val().trim().toLowerCase();
+
+      // Check for existing registration
+      try {
+        const { data: existing } = await supabase
+          .from(TABLE)
+          .select('id, status, platform')
+          .eq('vanta_email', email)
+          .single();
+
+        if (existing) {
+          userId = existing.id;
+          userPlatform = existing.platform;
+          currentStatus = existing.status;
+          localStorage.setItem('onboarding_user_id', userId);
+          showStepForStatus(existing);
+          subscribeRealtime();
+          startPolling();
+          btn.prop('disabled', false).text('Continue');
+          return;
+        }
+      } catch (e) { /* no existing record, continue */ }
+
+      const record = {
+        first_name: $('#firstName').val().trim(),
+        last_name: $('#lastName').val().trim(),
+        vanta_email: email,
+        region: $('#region').val(),
+        platform: userPlatform,
+        status: userPlatform === 'android' ? 'apple_id_confirmed' : 'registered'
+      };
+
+      const { data, error } = await supabase
+        .from(TABLE)
+        .insert(record)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          showError('This email is already registered. Refreshing...');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showError('Failed to register: ' + error.message);
+        }
+        btn.prop('disabled', false).text('Continue');
+        return;
+      }
+
+      userId = data.id;
+      currentStatus = data.status;
+      localStorage.setItem('onboarding_user_id', userId);
+      subscribeRealtime();
+      startPolling();
+      showStepForStatus(data);
+      btn.prop('disabled', false).text('Continue');
+    });
+
+    // =========================================================================
+    // SCREENSHOT & OCR
+    // =========================================================================
+    const uploadZone = document.getElementById('uploadZone');
+    const screenshotInput = document.getElementById('screenshotInput');
+
+    if (uploadZone) {
+      uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+      uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) processImage(e.dataTransfer.files[0]);
+      });
+    }
+
+    if (screenshotInput) {
+      screenshotInput.addEventListener('change', (e) => {
+        if (e.target.files.length) processImage(e.target.files[0]);
+      });
+    }
+
+    async function processImage(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showError('Please upload an image file.');
+        return;
+      }
+
+      $('#uploadZone').hide();
+      $('#ocrProgress').show();
+
+      try {
+        let worker = ocrWorker;
+        if (!worker && window.Tesseract) {
+          worker = await Tesseract.createWorker('eng');
+        }
+
+        if (!worker) {
+          showError('OCR engine not loaded. Please type your Apple ID email manually.');
+          $('#uploadZone').show();
+          $('#ocrProgress').hide();
+          return;
+        }
+
+        const result = await worker.recognize(file);
+        const text = result.data.text;
+
+        // Extract email pattern
+        const emailMatch = text.match(/[\w.+-]+@[\w.-]+\.\w{2,}/);
+        if (emailMatch) {
+          $('#appleIdEmail').val(emailMatch[0].toLowerCase());
+        }
+
+        $('#ocrProgress').hide();
+        $('#uploadZone').show().html(
+          '<div class="icon">&#9989;</div>' +
+          '<div style="font-size:14px;color:rgba(255,255,255,0.6);">Screenshot processed</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">Tap to try another</div>'
+        );
+      } catch (err) {
+        showError('OCR failed. Please type your Apple ID email manually.');
+        $('#ocrProgress').hide();
+        $('#uploadZone').show();
+      }
+    }
+
+    async function confirmAppleId() {
+      const email = $('#appleIdEmail').val().trim().toLowerCase();
+      if (!email || !email.includes('@')) {
+        showError('Please enter a valid Apple ID email address.');
+        return;
+      }
+
+      hideError();
+      const btn = $('#confirmAppleIdBtn');
+      btn.prop('disabled', true).text('Saving...');
+
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ apple_id_email: email, status: 'apple_id_confirmed' })
+        .eq('id', userId);
+
+      if (error) {
+        showError('Failed to save: ' + error.message);
+        btn.prop('disabled', false).text('Confirm Apple ID');
+        return;
+      }
+
+      currentStatus = 'apple_id_confirmed';
+      showStepForStatus({ status: currentStatus, platform: userPlatform, apple_id_email: email });
+      btn.prop('disabled', false).text('Confirm Apple ID');
+    }
+
+    // =========================================================================
+    // USER ACTIONS
+    // =========================================================================
+    async function markAccepted() {
+      const btn = $('#acceptBtn');
+      btn.prop('disabled', true);
+
+      let newStatus = 'dev_invite_accepted';
+      // Android: auto-advance through testflight_sent to app_downloaded -> show download step
+      if (userPlatform === 'android') {
+        newStatus = 'testflight_sent';
+      }
+
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ status: newStatus })
+        .eq('id', userId);
+
+      if (error) {
+        showError('Failed to update: ' + error.message);
+        btn.prop('disabled', false);
+        return;
+      }
+
+      currentStatus = newStatus;
+      showStepForStatus({ status: currentStatus, platform: userPlatform });
+      btn.prop('disabled', false);
+    }
+
+    async function markDownloaded() {
+      const btn = $('#downloadBtn');
+      btn.prop('disabled', true).text('Updating...');
+
+      const { error } = await supabase
+        .from(TABLE)
+        .update({ status: 'app_downloaded' })
+        .eq('id', userId);
+
+      if (error) {
+        showError('Failed to update: ' + error.message);
+        btn.prop('disabled', false).text("I've Installed the App");
+        return;
+      }
+
+      currentStatus = 'app_downloaded';
+      showStepForStatus({ status: currentStatus, platform: userPlatform });
+      btn.prop('disabled', false).text("I've Installed the App");
+    }
+
+    // =========================================================================
+    // REALTIME & POLLING
+    // =========================================================================
+    function subscribeRealtime() {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+
+      realtimeChannel = supabase
+        .channel('onboarding-user-' + userId)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: TABLE,
+          filter: 'id=eq.' + userId
+        }, (payload) => {
+          const newData = payload.new;
+          if (newData.status !== currentStatus) {
+            currentStatus = newData.status;
+            showStepForStatus(newData);
+          }
+        })
+        .subscribe();
+    }
+
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(refreshStatus, 30000);
+    }
+
+    async function refreshStatus() {
+      if (!userId) return;
+      try {
+        const { data } = await supabase
+          .from(TABLE)
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (data && data.status !== currentStatus) {
+          currentStatus = data.status;
+          showStepForStatus(data);
+        }
+        // Also update queue positions
+        updateQueuePositions();
+      } catch (e) { /* silent */ }
+    }
+
+    async function updateQueuePositions() {
+      if (!userId || !currentStatus) return;
+
+      // Determine which queue we're in
+      let queueStatus = null;
+      let queueElId = null;
+
+      if (currentStatus === 'apple_id_confirmed') {
+        queueStatus = 'apple_id_confirmed';
+        queueElId = 'devQueueNum';
+      } else if (currentStatus === 'dev_invite_accepted' && userPlatform === 'ios') {
+        queueStatus = 'dev_invite_accepted';
+        queueElId = 'tfQueueNum';
+      } else if (currentStatus === 'app_downloaded') {
+        queueStatus = 'app_downloaded';
+        queueElId = 'credsQueueNum';
+      }
+
+      if (!queueStatus || !queueElId) return;
+
+      try {
+        const { data } = await supabase
+          .from(TABLE)
+          .select('id, created_at')
+          .eq('status', queueStatus)
+          .order('created_at', { ascending: true });
+
+        if (data) {
+          const pos = data.findIndex(r => r.id === userId) + 1;
+          $('#' + queueElId).text(pos > 0 ? '#' + pos : '--');
+        }
+      } catch (e) { /* silent */ }
+    }
+
+    // =========================================================================
+    // STEP NAVIGATION
+    // =========================================================================
+    function showStepForStatus(record) {
+      const status = record.status || currentStatus;
+      const platform = record.platform || userPlatform;
+      const mapping = STATUS_STEP_MAP[status];
+      if (!mapping) return;
+
+      const step = mapping[platform];
+      showStep(step);
+      configureStepContent(step, record);
+      updateQueuePositions();
+    }
+
+    function showStep(stepName) {
+      // Hide all steps
+      $('[id^="step-"]').addClass('hidden');
+      // Show target step
+      $('#step-' + stepName).removeClass('hidden');
+      // Update progress pips
+      updateProgressPips(stepName);
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateProgressPips(stepName) {
+      const steps = userPlatform === 'ios' ? IOS_STEPS : ANDROID_STEPS;
+      const currentIdx = steps.indexOf(stepName);
+      const total = steps.length;
+
+      let html = '';
+      for (let i = 0; i < total; i++) {
+        if (i < currentIdx) html += '<div class="pip done"></div>';
+        else if (i === currentIdx) html += '<div class="pip active"></div>';
+        else html += '<div class="pip"></div>';
+      }
+      $('#stepProgress').html(html);
+    }
+
+    function configureStepContent(step, record) {
+      const platform = record.platform || userPlatform;
+
+      switch (step) {
+        case 'wait-dev':
+          if (platform === 'ios') {
+            $('#waitDevBadge').text('Waiting').removeClass().addClass('step-badge ios');
+            $('#waitDevTitle').text('Waiting for your invite...');
+            $('#waitDevSubtitle').text("We're sending you an Apple Developer Program invitation. This may take a few minutes.");
+          } else {
+            $('#waitDevBadge').text('Waiting').removeClass().addClass('step-badge android');
+            $('#waitDevTitle').text('Waiting for your download link...');
+            $('#waitDevSubtitle').text("We're preparing your app download link. Hang tight!");
+          }
+          break;
+
+        case 'accept':
+          if (platform === 'ios') {
+            $('#acceptBadge').removeClass().addClass('step-badge ios').text('Action Required');
+            $('#acceptTitle').text('Accept your invite');
+            $('#acceptSubtitle').text("An Apple Developer invite has been sent to your Apple ID email. Check your email and accept it.");
+            $('#acceptAppleIdDisplay').text(record.apple_id_email || '').show();
+            $('#acceptInstructions').html(
+              '<ol class="instruction-list">' +
+              '<li><span class="instruction-num">1</span> Check the email above for an invite from Apple</li>' +
+              '<li><span class="instruction-num">2</span> Open the email and tap <strong>Accept Invitation</strong></li>' +
+              '<li><span class="instruction-num">3</span> Sign in with your Apple ID if prompted</li>' +
+              '<li><span class="instruction-num">4</span> Come back here and tap the button below</li>' +
+              '</ol>'
+            );
+            $('#acceptBtnText').text("I've Accepted the Invite");
+          } else {
+            $('#acceptBadge').removeClass().addClass('step-badge android').text('Install');
+            $('#acceptTitle').text('Download the app');
+            $('#acceptSubtitle').text("Tap the link below to download and install the Vanta Sales app.");
+            $('#acceptAppleIdDisplay').html('<a href="' + APK_PAGE_URL + '" target="_blank" style="color:#6EDBB5;text-decoration:none;">' + APK_PAGE_URL + '</a>').show();
+            $('#acceptInstructions').html(
+              '<ol class="instruction-list">' +
+              '<li><span class="instruction-num">1</span> Tap the link above to open the download page</li>' +
+              '<li><span class="instruction-num">2</span> Tap <strong>Download Latest Version</strong></li>' +
+              '<li><span class="instruction-num">3</span> If prompted, allow <strong>"Install from unknown sources"</strong></li>' +
+              '<li><span class="instruction-num">4</span> Tap <strong>Install</strong> when the prompt appears</li>' +
+              '<li><span class="instruction-num">5</span> Come back here once installed</li>' +
+              '</ol>'
+            );
+            $('#acceptBtnText').text("I've Installed the App");
+          }
+          break;
+
+        case 'download':
+          if (platform === 'ios') {
+            $('#downloadBadge').removeClass().addClass('step-badge ios').text('Install');
+            $('#downloadTitle').text('Install via TestFlight');
+            $('#downloadSubtitle').text("A TestFlight invite has been sent to your Apple ID. Follow these steps to install the app.");
+            $('#downloadInstructions').html(
+              '<ol class="instruction-list">' +
+              '<li><span class="instruction-num">1</span> Download <strong>TestFlight</strong> from the App Store (if not installed)</li>' +
+              '<li><span class="instruction-num">2</span> Check your Apple ID email for a <strong>TestFlight invite</strong></li>' +
+              '<li><span class="instruction-num">3</span> Tap <strong>View in TestFlight</strong> in the email</li>' +
+              '<li><span class="instruction-num">4</span> Tap <strong>Accept</strong>, then <strong>Install</strong></li>' +
+              '<li><span class="instruction-num">5</span> Wait for the app to download, then come back here</li>' +
+              '</ol>'
+            );
+          } else {
+            $('#downloadBadge').removeClass().addClass('step-badge android').text('Verify');
+            $('#downloadTitle').text('Confirm installation');
+            $('#downloadSubtitle').text("Make sure the Vanta Sales app is installed and opens correctly.");
+            $('#downloadInstructions').html(
+              '<ol class="instruction-list">' +
+              '<li><span class="instruction-num">1</span> Find <strong>Vanta Sales</strong> on your home screen</li>' +
+              '<li><span class="instruction-num">2</span> Open it to verify it launches</li>' +
+              '<li><span class="instruction-num">3</span> Come back here and confirm below</li>' +
+              '</ol>'
+            );
+          }
+          break;
+
+        case 'complete':
+          $('#completeEmail').text(record.vanta_email || localStorage.getItem('onboarding_vanta_email') || '');
+          break;
+      }
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+    function showError(msg) {
+      $('#errorAlert').text(msg).show();
+      setTimeout(hideError, 6000);
+    }
+
+    function hideError() {
+      $('#errorAlert').hide();
+    }
+  </script>
+</body>
+</html>
