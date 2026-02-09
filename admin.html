@@ -634,6 +634,9 @@
     let activeTab = 'dev';
     let activityLog = [];
     let initialized = false;
+    let adminChannel = null;
+    let adminRtRetryCount = 0;
+    let adminRtRetryTimeout = null;
 
     // =========================================================================
     // AUTH  (session persists across reloads via sessionStorage)
@@ -703,12 +706,8 @@
       // Load data
       fetchAllUsers();
 
-      // Realtime
-      sb.channel('admin-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, (payload) => {
-          handleRealtimeEvent(payload);
-        })
-        .subscribe();
+      // Realtime (with error handling and exponential backoff)
+      subscribeAdminRealtime();
 
       // Keyboard shortcuts
       $(document).on('keydown', handleKeyboard);
@@ -727,6 +726,40 @@
     }
 
     // =========================================================================
+    // ADMIN REALTIME (with error handling and exponential backoff)
+    // =========================================================================
+    function subscribeAdminRealtime() {
+      // Clear any pending retry to avoid duplicates
+      if (adminRtRetryTimeout) { clearTimeout(adminRtRetryTimeout); adminRtRetryTimeout = null; }
+
+      if (adminChannel) {
+        try { sb.removeChannel(adminChannel); } catch (_) {}
+      }
+
+      adminChannel = sb
+        .channel('admin-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, function(payload) {
+          handleRealtimeEvent(payload);
+        })
+        .subscribe(function(status) {
+          if (status === 'SUBSCRIBED') {
+            adminRtRetryCount = 0;
+            console.log('Admin realtime: connected');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Exponential backoff: 2s, 4s, 8s, 16s … capped at 30s, plus jitter
+            var baseDelay = Math.min(2000 * Math.pow(2, adminRtRetryCount), 30000);
+            var jitter = Math.floor(Math.random() * 1000);
+            var delay = baseDelay + jitter;
+            adminRtRetryCount++;
+            console.warn('Admin realtime: ' + status + ', retry #' + adminRtRetryCount + ' in ' + delay + 'ms');
+            adminRtRetryTimeout = setTimeout(function() { subscribeAdminRealtime(); }, delay);
+          } else if (status === 'CLOSED') {
+            console.warn('Admin realtime: channel closed');
+          }
+        });
+    }
+
+    // =========================================================================
     // DATA
     // =========================================================================
     async function fetchAllUsers() {
@@ -742,13 +775,16 @@
       }
     }
 
+    // Safe first-letter helper — returns first char of str, or '?' if null/empty
+    function initial(str) { return (str && str.length) ? str.charAt(0) : '?'; }
+
     function handleRealtimeEvent(payload) {
       const eventType = payload.eventType;
 
       if (eventType === 'INSERT') {
         var record = payload.new;
         allUsers.push(record);
-        addActivity(escHtml(record.first_name) + ' ' + escHtml(record.last_name.charAt(0)) + '.', 'registered');
+        addActivity(escHtml(record.first_name || '') + ' ' + escHtml(initial(record.last_name)) + '.', 'registered');
       } else if (eventType === 'UPDATE') {
         var record = payload.new;
         const idx = allUsers.findIndex(u => String(u.id) === String(record.id));
@@ -756,7 +792,7 @@
           const oldStatus = allUsers[idx].status;
           allUsers[idx] = record;
           if (oldStatus !== record.status) {
-            addActivity(escHtml(record.first_name) + ' ' + escHtml(record.last_name.charAt(0)) + '.', statusLabel(record.status));
+            addActivity(escHtml(record.first_name || '') + ' ' + escHtml(initial(record.last_name)) + '.', statusLabel(record.status));
           }
         }
       } else if (eventType === 'DELETE') {
@@ -980,13 +1016,40 @@
     }
 
     function copyEmail(el, email) {
-      navigator.clipboard.writeText(email).then(() => {
+      navigator.clipboard.writeText(email).then(function() {
         $(el).addClass('copied');
         $(el).find('.copy-hint').text('copied!');
-        setTimeout(() => {
+        setTimeout(function() {
           $(el).removeClass('copied');
           $(el).find('.copy-hint').text('click to copy');
         }, 1500);
+      }).catch(function(err) {
+        console.warn('Clipboard API failed, trying execCommand fallback:', err);
+        // Fallback: create a temporary textarea, select, and execCommand('copy')
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = email;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          $(el).addClass('copied');
+          $(el).find('.copy-hint').text('copied!');
+          setTimeout(function() {
+            $(el).removeClass('copied');
+            $(el).find('.copy-hint').text('click to copy');
+          }, 1500);
+        } catch (fallbackErr) {
+          console.error('Copy fallback also failed:', fallbackErr);
+          $(el).css('border-color', 'var(--vanta-error)');
+          $(el).find('.copy-hint').text('copy failed').show();
+          setTimeout(function() {
+            $(el).css('border-color', '');
+            $(el).find('.copy-hint').text('click to copy');
+          }, 2000);
+        }
       });
     }
 
