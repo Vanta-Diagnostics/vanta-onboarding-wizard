@@ -406,7 +406,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Vanta Email</label>
-          <input type="email" class="form-control" id="vantaEmail" required placeholder="jane.smith@vantadx.com">
+          <input type="email" class="form-control" id="vantaEmail" required placeholder="jsmith@vantadx.com">
         </div>
         <div class="mb-3">
           <label class="form-label">Region</label>
@@ -561,7 +561,7 @@
     // =========================================================================
     // STATE
     // =========================================================================
-    let supabase;
+    let sb;
     let userId = null;
     let userPlatform = 'ios';
     let currentStatus = null;
@@ -591,7 +591,7 @@
     // INIT
     // =========================================================================
     $(document).ready(function() {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       checkExistingSession();
       // NOTE: preloadOCR() is NOT called here — it runs after platform is known
       // (inside checkExistingSession or setPlatform) to avoid loading ~40MB on Android.
@@ -609,7 +609,7 @@
       userId = localStorage.getItem('onboarding_user_id');
       if (userId) {
         try {
-          const { data, error } = await supabase
+          const { data, error } = await sb
             .from(TABLE)
             .select('*')
             .eq('id', userId)
@@ -694,7 +694,7 @@
 
       // Check for existing registration
       try {
-        const { data: existing } = await supabase
+        const { data: existing } = await sb
           .from(TABLE)
           .select('*')
           .eq('vanta_email', email)
@@ -723,7 +723,7 @@
         status: userPlatform === 'android' ? 'apple_id_confirmed' : 'registered'
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from(TABLE)
         .insert(record)
         .select()
@@ -838,7 +838,7 @@
       const btn = $('#confirmAppleIdBtn');
       btn.prop('disabled', true).text('Saving...');
 
-      const { error } = await supabase
+      const { error } = await sb
         .from(TABLE)
         .update({ apple_id_email: email, status: 'apple_id_confirmed' })
         .eq('id', userId);
@@ -867,7 +867,7 @@
         newStatus = 'testflight_sent';
       }
 
-      const { error } = await supabase
+      const { error } = await sb
         .from(TABLE)
         .update({ status: newStatus })
         .eq('id', userId);
@@ -887,7 +887,7 @@
       const btn = $('#downloadBtn');
       btn.prop('disabled', true).text('Updating...');
 
-      const { error } = await supabase
+      const { error } = await sb
         .from(TABLE)
         .update({ status: 'app_downloaded' })
         .eq('id', userId);
@@ -911,10 +911,10 @@
       if (rtRetryTimeout) { clearTimeout(rtRetryTimeout); rtRetryTimeout = null; }
 
       if (realtimeChannel) {
-        supabase.removeChannel(realtimeChannel);
+        sb.removeChannel(realtimeChannel);
       }
 
-      realtimeChannel = supabase
+      realtimeChannel = sb
         .channel('onboarding-user-' + userId)
         .on('postgres_changes', {
           event: 'UPDATE',
@@ -952,7 +952,7 @@
     async function refreshStatus() {
       if (!userId) return;
       try {
-        const { data } = await supabase
+        const { data } = await sb
           .from(TABLE)
           .select('*')
           .eq('id', userId)
@@ -988,7 +988,7 @@
       if (!queueStatus || !queueElId) return;
 
       try {
-        const { data } = await supabase
+        const { data } = await sb
           .from(TABLE)
           .select('id, created_at')
           .eq('status', queueStatus)

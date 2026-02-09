@@ -55,57 +55,70 @@
 
     .display-logo span { font-weight: 400; font-size: 14px; opacity: 0.7; margin-left: 6px; }
 
-    .qr-and-stats {
+    .qr-hero {
       display: flex;
-      gap: 32px;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
     }
 
     .qr-block {
       background: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      flex-shrink: 0;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     }
 
-    #qrcode { width: 200px; height: 200px; }
-    #qrcode canvas, #qrcode img { width: 200px !important; height: 200px !important; }
+    #qrcode { width: 280px; height: 280px; }
+    #qrcode canvas, #qrcode img { width: 280px !important; height: 280px !important; }
 
     .qr-url {
       text-align: center;
-      margin-top: 8px;
-      font-size: 11px;
-      color: rgba(255,255,255,0.6);
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
       word-break: break-all;
-      max-width: 232px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .qr-instruction {
+      text-align: center;
+      margin-top: 6px;
+      font-size: 15px;
+      color: rgba(255,255,255,0.9);
+      font-weight: 600;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      flex: 1;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
     }
 
     .stat-card {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 12px;
-      padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 8px;
       backdrop-filter: blur(10px);
+      text-align: center;
     }
 
     .stat-label {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 4px;
+      letter-spacing: 0.4px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .stat-num {
-      font-size: 28px;
+      font-size: 20px;
       font-weight: 700;
       font-feature-settings: "tnum";
       line-height: 1;
@@ -506,61 +519,58 @@
       <div style="font-size:12px;opacity:0.6;" id="clock"></div>
     </div>
 
-    <div class="qr-and-stats">
-      <div>
-        <div class="qr-block"><div id="qrcode"></div></div>
-        <div class="qr-url" id="wizardUrl"></div>
+    <div class="qr-hero">
+      <div class="qr-block"><div id="qrcode"></div></div>
+      <div class="qr-instruction">Scan to begin onboarding</div>
+      <div class="qr-url" id="wizardUrl"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Registered</div>
+        <div class="stat-num" id="statRegistered">0</div>
       </div>
-
-      <div style="flex:1;">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Registered</div>
-            <div class="stat-num" id="statRegistered">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Apple ID Ready</div>
-            <div class="stat-num" id="statAppleId">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Invites Sent</div>
-            <div class="stat-num" id="statInvites">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Accepted</div>
-            <div class="stat-num" id="statAccepted">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">TestFlight Sent</div>
-            <div class="stat-num" id="statTestFlight">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">App Installed</div>
-            <div class="stat-num" id="statInstalled">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Creds Sent</div>
-            <div class="stat-num" id="statCredsSent">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label" style="color:#6EDBB5;">Complete</div>
-            <div class="stat-num" style="color:#6EDBB5;" id="statComplete">0</div>
-          </div>
-        </div>
-
-        <div class="overall-progress">
-          <div class="progress-label">
-            <span>Overall Progress</span>
-            <span id="progressPercent">0%</span>
-          </div>
-          <div class="progress-bar-outer">
-            <div class="progress-bar-inner" id="progressBar"></div>
-          </div>
-        </div>
-
-        <div class="activity-feed" id="activityFeed"></div>
+      <div class="stat-card">
+        <div class="stat-label">Apple ID</div>
+        <div class="stat-num" id="statAppleId">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Invites</div>
+        <div class="stat-num" id="statInvites">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Accepted</div>
+        <div class="stat-num" id="statAccepted">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TestFlight</div>
+        <div class="stat-num" id="statTestFlight">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Installed</div>
+        <div class="stat-num" id="statInstalled">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Creds Sent</div>
+        <div class="stat-num" id="statCredsSent">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" style="color:#6EDBB5;">Complete</div>
+        <div class="stat-num" style="color:#6EDBB5;" id="statComplete">0</div>
       </div>
     </div>
+
+    <div class="overall-progress">
+      <div class="progress-label">
+        <span>Overall Progress</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div class="activity-feed" id="activityFeed"></div>
   </div>
 
   <!-- ADMIN WORK SECTION -->
@@ -615,7 +625,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@ec52670/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script>
     // =========================================================================
     // CONFIG
@@ -679,8 +689,8 @@
         if (typeof QRCode !== 'undefined') {
           new QRCode(document.getElementById('qrcode'), {
             text: WIZARD_URL,
-            width: 200,
-            height: 200,
+            width: 280,
+            height: 280,
             colorDark: '#000000',
             correctLevel: QRCode.CorrectLevel.H
           });
@@ -690,9 +700,9 @@
       } catch (e) {
         console.warn('QR JS failed, using image fallback:', e);
         $('#qrcode').html(
-          '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
+          '<img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' +
           encodeURIComponent(WIZARD_URL) +
-          '&color=00-00-00&format=png" alt="QR Code" width="200" height="200" ' +
+          '&color=00-00-00&format=png" alt="QR Code" width="280" height="280" ' +
           'style="display:block;" />'
         );
       }
@@ -770,7 +780,7 @@
 
       if (error) {
         console.error('fetchAllUsers failed:', error);
-        addActivity('Failed to load users: ' + (error.message || 'unknown error'), 'error');
+        addActivity('Failed to load users: ' + escHtml(error.message || 'unknown error'), 'error');
         return;
       }
 
@@ -817,19 +827,25 @@
     // STATS
     // =========================================================================
     function updateStats() {
+      const statusOrder = ['registered', 'apple_id_confirmed', 'dev_invite_sent', 'dev_invite_accepted', 'testflight_sent', 'app_downloaded', 'credentials_sent', 'complete'];
+      const maxStep = statusOrder.length - 1; // 7
+
       const counts = {
         registered: 0, apple_id_confirmed: 0, dev_invite_sent: 0,
         dev_invite_accepted: 0, testflight_sent: 0, app_downloaded: 0,
         credentials_sent: 0, complete: 0
       };
 
+      var weightedSum = 0;
+
       allUsers.forEach(u => {
         // Count all users who have REACHED or PASSED each status
-        const statusOrder = ['registered', 'apple_id_confirmed', 'dev_invite_sent', 'dev_invite_accepted', 'testflight_sent', 'app_downloaded', 'credentials_sent', 'complete'];
         const userIdx = statusOrder.indexOf(u.status);
         for (let i = 0; i <= userIdx; i++) {
           counts[statusOrder[i]]++;
         }
+        // Accumulate weighted progress
+        weightedSum += (userIdx < 0 ? 0 : userIdx);
       });
 
       $('#statRegistered').text(allUsers.length);
@@ -850,10 +866,10 @@
       $('#tfCount').text(tfQueue.length);
       $('#credsCount').text(credsQueue.length);
 
-      // Progress
+      // Progress — weighted by how far each user is through the workflow
+      // Each user contributes (their step index / max step index) to overall %
       const total = allUsers.length || 1;
-      const completeCount = allUsers.filter(u => u.status === 'credentials_sent' || u.status === 'complete').length;
-      const pct = Math.round((completeCount / total) * 100);
+      const pct = Math.round((weightedSum / (total * maxStep)) * 100);
       $('#progressPercent').text(pct + '%');
       $('#progressBar').css('width', pct + '%');
     }
@@ -869,7 +885,7 @@
         'credentials_sent': 'credentials sent',
         'complete': 'completed'
       };
-      return labels[status] || status;
+      return labels[status] || escHtml(status);
     }
 
     // =========================================================================
