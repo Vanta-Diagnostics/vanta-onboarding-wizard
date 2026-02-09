@@ -717,6 +717,13 @@
       $(document).on('click', '.email-cell', function() {
         copyEmail(this, $(this).data('email'));
       });
+
+      // Delegated click handler for Mark Sent buttons (avoids JS-in-onclick injection)
+      $(document).on('click', '.btn-mark', function() {
+        var uid = $(this).data('uid');
+        var status = $(this).data('status');
+        if (uid && status) markSent(String(uid), String(status));
+      });
     }
 
     // =========================================================================
@@ -737,12 +744,13 @@
 
     function handleRealtimeEvent(payload) {
       const eventType = payload.eventType;
-      const record = payload.new || payload.old;
 
       if (eventType === 'INSERT') {
+        var record = payload.new;
         allUsers.push(record);
         addActivity(escHtml(record.first_name) + ' ' + escHtml(record.last_name.charAt(0)) + '.', 'registered');
       } else if (eventType === 'UPDATE') {
+        var record = payload.new;
         const idx = allUsers.findIndex(u => String(u.id) === String(record.id));
         if (idx >= 0) {
           const oldStatus = allUsers[idx].status;
@@ -752,7 +760,11 @@
           }
         }
       } else if (eventType === 'DELETE') {
-        allUsers = allUsers.filter(u => String(u.id) !== String(record && record.id));
+        // payload.new is {} (truthy empty object) for DELETEs — must use payload.old
+        var old = payload.old;
+        if (old && old.id) {
+          allUsers = allUsers.filter(u => String(u.id) !== String(old.id));
+        }
       }
 
       updateStats();
@@ -887,7 +899,7 @@
         '<td><span class="platform-badge ' + escAttr(u.platform) + '">' + (u.platform === 'ios' ? 'iOS' : 'Android') + '</span></td>' +
         '<td><span class="email-cell" data-email="' + escAttr(email) + '" title="Click to copy">' + escHtml(email) + '<span class="copy-hint">click to copy</span></span></td>' +
         '<td><span class="region-badge">' + escHtml(u.region) + '</span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'dev_invite_sent\')">Mark Sent</button></td>' +
+        '<td><button class="btn-mark" data-uid="' + escAttr(u.id) + '" data-status="dev_invite_sent">Mark Sent</button></td>' +
         '</tr>';
     }
 
@@ -896,7 +908,7 @@
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
         '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
         '<td><span class="email-cell" data-email="' + escAttr(u.apple_id_email || '') + '" title="Click to copy">' + escHtml(u.apple_id_email || 'N/A') + '<span class="copy-hint">click to copy</span></span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'testflight_sent\')">Mark Sent</button></td>' +
+        '<td><button class="btn-mark" data-uid="' + escAttr(u.id) + '" data-status="testflight_sent">Mark Sent</button></td>' +
         '</tr>';
     }
 
@@ -905,7 +917,7 @@
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
         '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
         '<td><span class="email-cell" data-email="' + escAttr(u.vanta_email) + '" title="Click to copy">' + escHtml(u.vanta_email) + '<span class="copy-hint">click to copy</span></span></td>' +
-        '<td><button class="btn-mark" onclick="markSent(\'' + escAttr(u.id) + '\', \'credentials_sent\')">Mark Sent</button></td>' +
+        '<td><button class="btn-mark" data-uid="' + escAttr(u.id) + '" data-status="credentials_sent">Mark Sent</button></td>' +
         '</tr>';
     }
 
