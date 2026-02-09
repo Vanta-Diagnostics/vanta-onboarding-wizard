@@ -55,12 +55,12 @@
     }
 
     .step-card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 16px;
       padding: 28px 24px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -71,59 +71,60 @@
 
     .step-badge {
       display: inline-block;
-      padding: 4px 12px;
+      padding: 5px 14px;
       border-radius: 20px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       margin-bottom: 16px;
     }
 
-    .step-badge.ios { background: rgba(28,117,186,0.25); color: #7CB9E8; }
-    .step-badge.android { background: rgba(60,193,148,0.25); color: #6EDBB5; }
-    .step-badge.neutral { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+    .step-badge.ios { background: rgba(28,117,186,0.4); color: #fff; }
+    .step-badge.android { background: rgba(60,193,148,0.4); color: #fff; }
+    .step-badge.neutral { background: rgba(255,255,255,0.18); color: #fff; }
 
     .step-title {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.3px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      color: #fff;
     }
 
     .step-subtitle {
-      font-size: 14px;
-      color: rgba(255,255,255,0.65);
+      font-size: 16px;
+      color: rgba(255,255,255,0.85);
       margin-bottom: 24px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .form-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
       margin-bottom: 6px;
     }
 
     .form-control, .form-select {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
       color: #fff;
       border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 15px;
+      padding: 14px 16px;
+      font-size: 16px;
       font-family: 'IBM Plex Sans', sans-serif;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .form-control:focus, .form-select:focus {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.14);
       border-color: var(--vanta-blue);
-      box-shadow: 0 0 0 3px rgba(28,117,186,0.25);
+      box-shadow: 0 0 0 3px rgba(28,117,186,0.3);
       color: #fff;
     }
 
-    .form-control::placeholder { color: rgba(255,255,255,0.3); }
+    .form-control::placeholder { color: rgba(255,255,255,0.4); }
 
     .form-select option { background: var(--surface-dark); color: #fff; }
 
@@ -173,12 +174,12 @@
 
     .platform-toggle .toggle-btn {
       flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.15);
+      padding: 14px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.5);
-      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      font-size: 15px;
       font-weight: 600;
       font-family: 'IBM Plex Sans', sans-serif;
       cursor: pointer;
@@ -188,14 +189,16 @@
 
     .platform-toggle .toggle-btn.active-ios {
       border-color: var(--vanta-blue);
-      background: rgba(28,117,186,0.15);
-      color: #7CB9E8;
+      background: rgba(28,117,186,0.35);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(28,117,186,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
     }
 
     .platform-toggle .toggle-btn.active-android {
       border-color: var(--vanta-teal);
-      background: rgba(60,193,148,0.15);
-      color: #6EDBB5;
+      background: rgba(60,193,148,0.35);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(60,193,148,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
     }
 
     .queue-display {
@@ -215,8 +218,8 @@
     }
 
     .queue-label {
-      font-size: 14px;
-      color: rgba(255,255,255,0.5);
+      font-size: 15px;
+      color: rgba(255,255,255,0.75);
     }
 
     .spinner-dots {
@@ -243,13 +246,13 @@
     }
 
     .email-highlight {
-      background: rgba(28,117,186,0.2);
-      border: 1px solid rgba(28,117,186,0.4);
+      background: rgba(28,117,186,0.25);
+      border: 1px solid rgba(28,117,186,0.5);
       border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 15px;
+      padding: 16px 18px;
+      font-size: 17px;
       font-weight: 600;
-      color: #7CB9E8;
+      color: #fff;
       text-align: center;
       word-break: break-all;
       margin: 16px 0;
@@ -265,22 +268,27 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      font-size: 14px;
-      line-height: 1.5;
-      color: rgba(255,255,255,0.8);
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 15px;
+      line-height: 1.55;
+      color: #fff;
+    }
+
+    .instruction-list li strong {
+      color: #fff;
+      font-weight: 700;
     }
 
     .instruction-list li:last-child { border-bottom: none; }
 
     .instruction-num {
-      min-width: 24px;
-      height: 24px;
+      min-width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: rgba(28,117,186,0.2);
-      color: var(--vanta-blue);
-      font-size: 12px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 13px;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -289,13 +297,14 @@
     }
 
     .ocr-upload-zone {
-      border: 2px dashed rgba(255,255,255,0.2);
+      border: 2px dashed rgba(255,255,255,0.3);
       border-radius: 12px;
       padding: 32px 16px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
       margin-bottom: 16px;
+      background: rgba(255,255,255,0.04);
     }
 
     .ocr-upload-zone:hover,
@@ -339,12 +348,13 @@
     }
 
     .alert-glass {
-      background: rgba(239,68,68,0.12);
-      border: 1px solid rgba(239,68,68,0.3);
+      background: rgba(239,68,68,0.18);
+      border: 1px solid rgba(239,68,68,0.4);
       border-radius: 10px;
-      padding: 12px 16px;
-      color: #FCA5A5;
-      font-size: 13px;
+      padding: 14px 16px;
+      color: #FECACA;
+      font-size: 14px;
+      font-weight: 500;
       margin-bottom: 16px;
       display: none;
     }
@@ -359,9 +369,9 @@
 
     .step-progress .pip {
       flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.1);
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.15);
       transition: background 0.3s;
     }
 
@@ -450,20 +460,20 @@
 
       <div class="ocr-upload-zone" id="uploadZone" onclick="document.getElementById('screenshotInput').click()">
         <div class="icon">&#128247;</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.6);">Tap to upload screenshot</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">or drag & drop</div>
+        <div style="font-size:15px;color:rgba(255,255,255,0.85);">Tap to upload screenshot</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;">or drag & drop</div>
         <input type="file" id="screenshotInput" accept="image/*" class="hidden">
       </div>
 
       <div class="ocr-progress" id="ocrProgress">
         <div class="spinner-border spinner-border-sm" role="status"></div>
-        <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.6);">Extracting Apple ID...</div>
+        <div style="margin-top:8px;font-size:14px;color:rgba(255,255,255,0.85);">Extracting Apple ID...</div>
       </div>
 
       <div class="mb-3">
         <label class="form-label">Apple ID Email</label>
         <input type="email" class="form-control" id="appleIdEmail" placeholder="your.appleid@icloud.com">
-        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px;">Confirm or type manually if OCR didn't catch it</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:4px;">Confirm or type manually if OCR didn't catch it</div>
       </div>
 
       <button class="btn-vanta" id="confirmAppleIdBtn" onclick="confirmAppleId()">Confirm Apple ID</button>
@@ -523,7 +533,7 @@
 
     <!-- STEP 7: Wait for Credentials -->
     <div id="step-wait-creds" class="step-card hidden">
-      <span class="step-badge neutral">Final Step</span>
+      <span class="step-badge neutral">Almost There</span>
       <h2 class="step-title">One last thing...</h2>
       <p class="step-subtitle">We're sending your login credentials to your Vanta email now.</p>
 
@@ -534,14 +544,32 @@
       </div>
     </div>
 
-    <!-- STEP 8: Complete -->
+    <!-- STEP 8: Confirm Login -->
+    <div id="step-confirm-login" class="step-card hidden">
+      <span class="step-badge neutral">Almost Done</span>
+      <h2 class="step-title">Check your Vanta email</h2>
+      <p class="step-subtitle">Your login credentials have been sent to your Vanta email. Open the app and sign in, then tap the button below to confirm.</p>
+
+      <div class="email-highlight" id="confirmLoginEmail"></div>
+
+      <ol class="instruction-list">
+        <li><span class="instruction-num">1</span> Check your <strong>Vanta email</strong> for your login credentials</li>
+        <li><span class="instruction-num">2</span> Open the <strong>Vanta Sales</strong> app</li>
+        <li><span class="instruction-num">3</span> Sign in with the credentials from your email</li>
+        <li><span class="instruction-num">4</span> Once you're logged in, tap <strong>I'm In</strong> below</li>
+      </ol>
+
+      <button class="btn-vanta" id="confirmLoginBtn" onclick="confirmLogin()">I'm In!</button>
+    </div>
+
+    <!-- STEP 9: Complete -->
     <div id="step-complete" class="step-card hidden">
       <div style="text-align:center;">
         <div class="success-check">&#10003;</div>
         <h2 class="step-title">You're all set!</h2>
-        <p class="step-subtitle" style="margin-bottom:16px;">Check your Vanta email for your login credentials.</p>
+        <p class="step-subtitle" style="margin-bottom:16px;">You're onboarded and ready to go. Welcome to Vanta Sales!</p>
         <div class="email-highlight" id="completeEmail"></div>
-        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:16px;">Open the Vanta Sales app and sign in. Welcome aboard!</p>
+        <p style="font-size:14px;color:rgba(255,255,255,0.7);margin-top:16px;">You can close this page now.</p>
       </div>
     </div>
   </div>
@@ -572,8 +600,8 @@
     let rtRetryTimeout = null;   // Pending reconnect timeout ID
 
     // Step mapping for iOS and Android
-    const IOS_STEPS = ['register', 'screenshot', 'wait-dev', 'accept', 'wait-tf', 'download', 'wait-creds', 'complete'];
-    const ANDROID_STEPS = ['register', 'wait-dev', 'accept', 'download', 'wait-creds', 'complete'];
+    const IOS_STEPS = ['register', 'screenshot', 'wait-dev', 'accept', 'wait-tf', 'download', 'wait-creds', 'confirm-login', 'complete'];
+    const ANDROID_STEPS = ['register', 'wait-dev', 'accept', 'download', 'wait-creds', 'confirm-login', 'complete'];
 
     // Status to step mapping
     const STATUS_STEP_MAP = {
@@ -583,8 +611,8 @@
       'dev_invite_accepted': { ios: 'wait-tf',    android: 'download' },
       'testflight_sent':     { ios: 'download',   android: 'download' },
       'app_downloaded':      { ios: 'wait-creds', android: 'wait-creds' },
-      'credentials_sent':    { ios: 'complete',   android: 'complete' },
-      'complete':            { ios: 'complete',   android: 'complete' }
+      'credentials_sent':    { ios: 'confirm-login', android: 'confirm-login' },
+      'complete':            { ios: 'complete',       android: 'complete' }
     };
 
     // =========================================================================
@@ -811,8 +839,8 @@
         // Re-render upload zone with a new file input so "try another" works
         $('#uploadZone').show().html(
           '<div class="icon">&#9989;</div>' +
-          '<div style="font-size:14px;color:rgba(255,255,255,0.6);">Screenshot processed</div>' +
-          '<div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:4px;">Tap to try another</div>' +
+          '<div style="font-size:15px;color:rgba(255,255,255,0.85);">Screenshot processed</div>' +
+          '<div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;">Tap to try another</div>' +
           '<input type="file" id="screenshotInput" accept="image/*" class="hidden">'
         );
         // Re-attach change listener to the new file input
@@ -1118,10 +1146,37 @@
           }
           break;
 
+        case 'confirm-login':
+          $('#confirmLoginEmail').text(record.vanta_email || localStorage.getItem('onboarding_vanta_email') || '');
+          break;
+
         case 'complete':
           $('#completeEmail').text(record.vanta_email || localStorage.getItem('onboarding_vanta_email') || '');
           break;
       }
+    }
+
+    // =========================================================================
+    // CONFIRM LOGIN
+    // =========================================================================
+    async function confirmLogin() {
+      const btn = $('#confirmLoginBtn');
+      btn.prop('disabled', true).text('Confirming...');
+
+      const { error } = await sb
+        .from(TABLE)
+        .update({ status: 'complete' })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('confirmLogin failed:', error);
+        showError('Something went wrong. Please try again.');
+        btn.prop('disabled', false).text("I'm In!");
+        return;
+      }
+
+      currentStatus = 'complete';
+      showStepForStatus({ status: 'complete', vanta_email: localStorage.getItem('onboarding_vanta_email') });
     }
 
     // =========================================================================

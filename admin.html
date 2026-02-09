@@ -921,7 +921,7 @@
       switch (activeTab) {
         case 'dev':
           users = allUsers.filter(u => u.status === 'apple_id_confirmed');
-          headers = '<tr><th>#</th><th>Name</th><th>Platform</th><th>Email to Copy</th><th>Region</th><th>Action</th></tr>';
+          headers = '<tr><th>#</th><th>First Name</th><th>Last Name</th><th>Platform</th><th>Email to Copy</th><th>Region</th><th>Action</th></tr>';
           rowFn = renderDevRow;
           break;
         case 'testflight':
@@ -950,10 +950,13 @@
     }
 
     function renderDevRow(u, num) {
+      const firstName = u.first_name || '';
+      const lastName = u.last_name || '';
       const email = u.platform === 'ios' ? (u.apple_id_email || 'N/A') : (u.vanta_email || 'N/A');
       return '<tr>' +
         '<td style="color:rgba(255,255,255,0.3);">' + num + '</td>' +
-        '<td class="name-cell">' + escHtml(u.first_name) + ' ' + escHtml(u.last_name) + '</td>' +
+        '<td><span class="email-cell" data-email="' + escAttr(firstName) + '" title="Click to copy">' + escHtml(firstName) + '<span class="copy-hint">click to copy</span></span></td>' +
+        '<td><span class="email-cell" data-email="' + escAttr(lastName) + '" title="Click to copy">' + escHtml(lastName) + '<span class="copy-hint">click to copy</span></span></td>' +
         '<td><span class="platform-badge ' + escAttr(u.platform) + '">' + (u.platform === 'ios' ? 'iOS' : 'Android') + '</span></td>' +
         '<td><span class="email-cell" data-email="' + escAttr(email) + '" title="Click to copy">' + escHtml(email) + '<span class="copy-hint">click to copy</span></span></td>' +
         '<td><span class="region-badge">' + escHtml(u.region) + '</span></td>' +
