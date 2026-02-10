@@ -399,6 +399,20 @@
     <!-- Error Alert -->
     <div class="alert-glass" id="errorAlert"></div>
 
+    <!-- SESSION CLAIM: Backward-compat for returning users without a session token -->
+    <div id="step-claim-session" class="step-card hidden">
+      <span class="step-badge neutral">Welcome Back</span>
+      <h2 class="step-title">Verify your identity</h2>
+      <p class="step-subtitle">We've upgraded our security. Please confirm your Vanta email to continue where you left off.</p>
+
+      <div class="mb-3">
+        <label class="form-label">Vanta Email</label>
+        <input type="email" class="form-control" id="claimEmail" required placeholder="jsmith@vantadx.com">
+      </div>
+
+      <button class="btn-vanta" id="claimBtn" type="button" onclick="claimSession()">Verify &amp; Continue</button>
+    </div>
+
     <!-- STEP 1: Registration -->
     <div id="step-register" class="step-card">
       <span class="step-badge neutral">Step 1</span>
@@ -591,6 +605,7 @@
     // =========================================================================
     let sb;
     let userId = null;
+    let sessionToken = null;      // UUID for token-validated self-updates via RPC
     let userPlatform = 'ios';
     let currentStatus = null;
     let realtimeChannel = null;
@@ -601,13 +616,15 @@
 
     // Step mapping for iOS and Android
     const IOS_STEPS = ['register', 'screenshot', 'wait-dev', 'accept', 'wait-tf', 'download', 'wait-creds', 'confirm-login', 'complete'];
-    const ANDROID_STEPS = ['register', 'wait-dev', 'accept', 'download', 'wait-creds', 'confirm-login', 'complete'];
+    const ANDROID_STEPS = ['register', 'download', 'wait-creds', 'confirm-login', 'complete'];
 
     // Status to step mapping
+    // Android: all pre-download statuses map directly to 'download' — users
+    // skip the dev invite and TestFlight queues entirely, going straight to APK download.
     const STATUS_STEP_MAP = {
-      'registered':          { ios: 'screenshot', android: 'wait-dev' },
-      'apple_id_confirmed':  { ios: 'wait-dev',   android: 'wait-dev' },
-      'dev_invite_sent':     { ios: 'accept',     android: 'accept' },
+      'registered':          { ios: 'screenshot', android: 'download' },
+      'apple_id_confirmed':  { ios: 'wait-dev',   android: 'download' },
+      'dev_invite_sent':     { ios: 'accept',     android: 'download' },
       'dev_invite_accepted': { ios: 'wait-tf',    android: 'download' },
       'testflight_sent':     { ios: 'download',   android: 'download' },
       'app_downloaded':      { ios: 'wait-creds', android: 'wait-creds' },
@@ -635,6 +652,8 @@
 
     async function checkExistingSession() {
       userId = localStorage.getItem('onboarding_user_id');
+      sessionToken = localStorage.getItem('onboarding_session_token');
+
       if (userId) {
         try {
           const { data, error } = await sb
@@ -646,6 +665,15 @@
           if (data && !error) {
             userPlatform = data.platform || 'ios';
             currentStatus = data.status;
+
+            // Backward compatibility: existing users may not have a session token
+            // in localStorage (registered before session_token column was added).
+            // Prompt them to verify their email to claim the token once.
+            if (!sessionToken) {
+              showClaimFlow(data);
+              return;
+            }
+
             preloadOCR(); // Now platform is known — only loads for iOS
             showStepForStatus(data);
             subscribeRealtime();
@@ -654,11 +682,76 @@
           }
         } catch (e) { console.warn('checkExistingSession: failed to fetch user', userId, e); }
         localStorage.removeItem('onboarding_user_id');
+        localStorage.removeItem('onboarding_session_token');
         userId = null;
+        sessionToken = null;
       }
       showStep('register');
       // Default platform is 'ios' — preload OCR so it's ready by the screenshot step
       preloadOCR();
+    }
+
+    // =========================================================================
+    // BACKWARD-COMPAT SESSION CLAIM
+    // =========================================================================
+    // Shown to returning users who have an ID in localStorage but no session
+    // token. They verify their Vanta email to claim the token once.
+    function showClaimFlow(userData) {
+      // Hide all steps and show claim UI
+      $('[id^="step-"]').addClass('hidden');
+      $('#step-claim-session').removeClass('hidden');
+      $('#claimEmail').val(localStorage.getItem('onboarding_vanta_email') || '');
+    }
+
+    async function claimSession() {
+      hideError();
+      const email = $('#claimEmail').val().trim().toLowerCase();
+      if (!email) {
+        showError('Please enter your Vanta email address.');
+        return;
+      }
+
+      const btn = $('#claimBtn');
+      btn.prop('disabled', true).text('Verifying...');
+
+      try {
+        const { data, error } = await sb.rpc('claim_onboarding_session', {
+          p_id: parseInt(userId),
+          p_vanta_email: email
+        });
+
+        if (error) {
+          console.error('claim_onboarding_session failed:', error);
+          showError('Could not verify your email. Please check and try again.');
+          btn.prop('disabled', false).text('Verify & Continue');
+          return;
+        }
+
+        // data is the returned session_token UUID
+        sessionToken = data;
+        localStorage.setItem('onboarding_session_token', sessionToken);
+        localStorage.setItem('onboarding_vanta_email', email);
+
+        // Now resume normal flow
+        const { data: userData } = await sb
+          .from(TABLE)
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (userData) {
+          userPlatform = userData.platform || 'ios';
+          currentStatus = userData.status;
+          preloadOCR();
+          showStepForStatus(userData);
+          subscribeRealtime();
+          startPolling();
+        }
+      } catch (e) {
+        console.error('claimSession error:', e);
+        showError('Something went wrong. Please try again.');
+        btn.prop('disabled', false).text('Verify & Continue');
+      }
     }
 
     // =========================================================================
@@ -734,6 +827,32 @@
           currentStatus = existing.status;
           localStorage.setItem('onboarding_user_id', userId);
           localStorage.setItem('onboarding_vanta_email', email);
+
+          // session_token is not visible via anon SELECT (column-level REVOKE).
+          // Auto-claim the token using the email the user just entered — this
+          // is equivalent to the manual claim flow but seamless.
+          if (!sessionToken) {
+            try {
+              const { data: token, error: claimErr } = await sb.rpc('claim_onboarding_session', {
+                p_id: parseInt(userId),
+                p_vanta_email: email
+              });
+              if (!claimErr && token) {
+                sessionToken = token;
+              }
+            } catch (claimEx) { console.warn('Auto-claim failed (may already be claimed):', claimEx); }
+          }
+
+          // If we still don't have a token (claim failed/already claimed),
+          // route to the manual claim flow instead of showing step UI with
+          // non-functional update buttons.
+          if (!sessionToken) {
+            btn.prop('disabled', false).text('Continue');
+            showClaimFlow(existing);
+            return;
+          }
+
+          localStorage.setItem('onboarding_session_token', sessionToken);
           showStepForStatus(existing);
           subscribeRealtime();
           startPolling();
@@ -742,20 +861,15 @@
         }
       } catch (e) { console.warn('Registration lookup: no existing record or query failed', e); }
 
-      const record = {
-        first_name: $('#firstName').val().trim(),
-        last_name: $('#lastName').val().trim(),
-        vanta_email: email,
-        region: $('#region').val(),
-        platform: userPlatform,
-        status: userPlatform === 'android' ? 'apple_id_confirmed' : 'registered'
-      };
-
-      const { data, error } = await sb
-        .from(TABLE)
-        .insert(record)
-        .select()
-        .single();
+      // Register via SECURITY DEFINER RPC — this returns the full row
+      // including session_token (which anon cannot SELECT directly).
+      const { data, error } = await sb.rpc('register_onboarding_user', {
+        p_first_name: $('#firstName').val().trim(),
+        p_last_name: $('#lastName').val().trim(),
+        p_vanta_email: email,
+        p_region: $('#region').val(),
+        p_platform: userPlatform
+      });
 
       if (error) {
         if (error.code === '23505') {
@@ -769,8 +883,10 @@
       }
 
       userId = data.id;
+      sessionToken = data.session_token;
       currentStatus = data.status;
       localStorage.setItem('onboarding_user_id', userId);
+      localStorage.setItem('onboarding_session_token', sessionToken);
       localStorage.setItem('onboarding_vanta_email', email);
       subscribeRealtime();
       startPolling();
@@ -866,12 +982,15 @@
       const btn = $('#confirmAppleIdBtn');
       btn.prop('disabled', true).text('Saving...');
 
-      const { error } = await sb
-        .from(TABLE)
-        .update({ apple_id_email: email, status: 'apple_id_confirmed' })
-        .eq('id', userId);
+      const { data, error } = await sb.rpc('update_onboarding_user', {
+        p_id: parseInt(userId),
+        p_session_token: sessionToken,
+        p_status: 'apple_id_confirmed',
+        p_apple_id_email: email
+      });
 
       if (error) {
+        console.error('confirmAppleId RPC failed:', error);
         showError('Failed to save: ' + error.message);
         btn.prop('disabled', false).text('Confirm Apple ID');
         return;
@@ -889,18 +1008,17 @@
       const btn = $('#acceptBtn');
       btn.prop('disabled', true);
 
-      let newStatus = 'dev_invite_accepted';
-      // Android: auto-advance through testflight_sent to app_downloaded -> show download step
-      if (userPlatform === 'android') {
-        newStatus = 'testflight_sent';
-      }
+      // iOS only: mark as dev_invite_accepted (Android users skip this step entirely)
+      const newStatus = 'dev_invite_accepted';
 
-      const { error } = await sb
-        .from(TABLE)
-        .update({ status: newStatus })
-        .eq('id', userId);
+      const { data, error } = await sb.rpc('update_onboarding_user', {
+        p_id: parseInt(userId),
+        p_session_token: sessionToken,
+        p_status: newStatus
+      });
 
       if (error) {
+        console.error('markAccepted RPC failed:', error);
         showError('Failed to update: ' + error.message);
         btn.prop('disabled', false);
         return;
@@ -915,12 +1033,14 @@
       const btn = $('#downloadBtn');
       btn.prop('disabled', true).text('Updating...');
 
-      const { error } = await sb
-        .from(TABLE)
-        .update({ status: 'app_downloaded' })
-        .eq('id', userId);
+      const { data, error } = await sb.rpc('update_onboarding_user', {
+        p_id: parseInt(userId),
+        p_session_token: sessionToken,
+        p_status: 'app_downloaded'
+      });
 
       if (error) {
+        console.error('markDownloaded RPC failed:', error);
         showError('Failed to update: ' + error.message);
         btn.prop('disabled', false).text("I've Installed the App");
         return;
@@ -1133,14 +1253,20 @@
               '</ol>'
             );
           } else {
-            $('#downloadBadge').removeClass().addClass('step-badge android').text('Verify');
-            $('#downloadTitle').text('Confirm installation');
-            $('#downloadSubtitle').text("Make sure the Vanta Sales app is installed and opens correctly.");
+            $('#downloadBadge').removeClass().addClass('step-badge android').text('Install');
+            $('#downloadTitle').text('Download & Install the App');
+            $('#downloadSubtitle').html('Tap the link below to download and install the <strong>Vanta Sales</strong> app on your device.');
             $('#downloadInstructions').html(
+              '<div style="text-align:center;margin-bottom:16px;">' +
+              '<a href="' + APK_PAGE_URL + '" target="_blank" class="btn-vanta" style="display:inline-block;text-decoration:none;padding:14px 28px;font-size:16px;">Download Vanta Sales</a>' +
+              '</div>' +
               '<ol class="instruction-list">' +
-              '<li><span class="instruction-num">1</span> Find <strong>Vanta Sales</strong> on your home screen</li>' +
-              '<li><span class="instruction-num">2</span> Open it to verify it launches</li>' +
-              '<li><span class="instruction-num">3</span> Come back here and confirm below</li>' +
+              '<li><span class="instruction-num">1</span> Tap the <strong>Download</strong> button above</li>' +
+              '<li><span class="instruction-num">2</span> Tap <strong>Download Latest Version</strong> on the download page</li>' +
+              '<li><span class="instruction-num">3</span> If prompted, allow <strong>"Install from unknown sources"</strong></li>' +
+              '<li><span class="instruction-num">4</span> Tap <strong>Install</strong> when the prompt appears</li>' +
+              '<li><span class="instruction-num">5</span> Open the app to verify it launches</li>' +
+              '<li><span class="instruction-num">6</span> Come back here and tap the button below</li>' +
               '</ol>'
             );
           }
@@ -1163,13 +1289,14 @@
       const btn = $('#confirmLoginBtn');
       btn.prop('disabled', true).text('Confirming...');
 
-      const { error } = await sb
-        .from(TABLE)
-        .update({ status: 'complete' })
-        .eq('id', userId);
+      const { data, error } = await sb.rpc('update_onboarding_user', {
+        p_id: parseInt(userId),
+        p_session_token: sessionToken,
+        p_status: 'complete'
+      });
 
       if (error) {
-        console.error('confirmLogin failed:', error);
+        console.error('confirmLogin RPC failed:', error);
         showError('Something went wrong. Please try again.');
         btn.prop('disabled', false).text("I'm In!");
         return;

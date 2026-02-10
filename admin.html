@@ -456,7 +456,11 @@
       font-family: 'IBM Plex Sans', sans-serif;
       width: 100%;
       margin-bottom: 12px;
-      text-align: center;
+    }
+
+    .login-card input[type="email"],
+    .login-card input[type="password"] {
+      text-align: left;
     }
 
     .login-card input:focus {
@@ -504,11 +508,43 @@
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
       <h2>Admin Dashboard</h2>
-      <p>Enter the admin password to continue.</p>
-      <form id="adminLoginForm">
-        <input type="password" id="adminPassword" placeholder="Password" autofocus>
-        <button type="submit" class="btn-login">Enter</button>
-      </form>
+
+      <!-- Step 1: Email + Password -->
+      <div id="loginStep1">
+        <p>Sign in with your admin account.</p>
+        <form id="adminLoginForm">
+          <input type="email" id="adminEmail" placeholder="Email" autocomplete="email" required autofocus>
+          <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" required>
+          <div id="loginError" style="color:var(--vanta-error);font-size:13px;margin-bottom:10px;display:none;"></div>
+          <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
+        </form>
+      </div>
+
+      <!-- Step 2: MFA TOTP Verification -->
+      <div id="loginStep2" style="display:none;">
+        <p>Enter the 6-digit code from your authenticator app.</p>
+        <form id="mfaForm">
+          <input type="text" id="mfaCode" placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+                 autocomplete="one-time-code" inputmode="numeric"
+                 style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:600;" autofocus>
+          <div id="mfaError" style="color:var(--vanta-error);font-size:13px;margin-bottom:10px;display:none;"></div>
+          <button type="submit" class="btn-login" id="mfaBtn">Verify</button>
+        </form>
+      </div>
+
+      <!-- Step 3: No MFA enrolled -->
+      <div id="loginStepNoMfa" style="display:none;">
+        <p style="color:var(--vanta-warning);">Your account does not have MFA enabled.</p>
+        <p style="font-size:13px;opacity:0.7;">Please enroll MFA using the Vanta Sales mobile app first, then try again.</p>
+        <button class="btn-login" onclick="signOut()" style="margin-top:12px;">Sign Out</button>
+      </div>
+
+      <!-- Access denied -->
+      <div id="loginStepDenied" style="display:none;">
+        <p style="color:var(--vanta-error);">Access denied.</p>
+        <p style="font-size:13px;opacity:0.7;">You do not have admin privileges. Contact your administrator.</p>
+        <button class="btn-login" onclick="signOut()" style="margin-top:12px;">Sign Out</button>
+      </div>
     </div>
   </div>
 
@@ -516,7 +552,10 @@
   <div class="display-section">
     <div class="display-header">
       <div class="display-logo">VANTA <span>Device Onboarding</span></div>
-      <div style="font-size:12px;opacity:0.6;" id="clock"></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:12px;opacity:0.6;" id="clock"></div>
+        <button id="logoutBtn" onclick="signOut()" style="display:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Sign Out</button>
+      </div>
     </div>
 
     <div class="qr-hero">
@@ -633,7 +672,6 @@
     const SUPABASE_URL = 'https://jnqspdbtwyrfdlambvkb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpucXNwZGJ0d3lyZmRsYW1idmtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1MTU0MzAsImV4cCI6MjA1MzA5MTQzMH0.EWba2SLuOEVO6-a7MSDu3TZR1bNX4VnYNUB4k7JSeVg';
     const TABLE = 'onboarding_users';
-    const ADMIN_PASSWORD = 'vanta2026!onboard';
     const WIZARD_URL = 'https://vanta-diagnostics.github.io/vanta-onboarding-wizard/';
 
     // =========================================================================
@@ -647,42 +685,234 @@
     let adminChannel = null;
     let adminRtRetryCount = 0;
     let adminRtRetryTimeout = null;
+    let clockInterval = null;    // setInterval ID for the clock display
 
     // =========================================================================
-    // AUTH  (session persists across reloads via sessionStorage)
+    // SUPABASE CLIENT (created early so auth methods work before dashboard init)
+    // =========================================================================
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // =========================================================================
+    // AUTH — Supabase email/password + MFA (AAL2) + admin role check
     // =========================================================================
     $(document).ready(function() {
-      // Resume previous session — avoids re-prompting after accidental refresh
-      if (sessionStorage.getItem('admin_authed') === '1') {
-        $('#loginOverlay').hide();
-        try { init(); } catch (e) { console.error('Init error:', e); }
-        return;
-      }
+      // Check for existing authenticated session on page load
+      checkExistingAdminSession();
 
-      // Login form handler — e.preventDefault() guarantees no page reload
-      $('#adminLoginForm').on('submit', function(e) {
+      // Login form: email + password (Step 1)
+      $('#adminLoginForm').on('submit', async function(e) {
         e.preventDefault();
-        if ($('#adminPassword').val() === ADMIN_PASSWORD) {
-          sessionStorage.setItem('admin_authed', '1');
-          $('#loginOverlay').fadeOut(200);
-          try { init(); } catch (e) { console.error('Init error:', e); }
-        } else {
-          $('#adminPassword').css('border-color', 'var(--vanta-error)').val('').attr('placeholder', 'Wrong password');
-          setTimeout(function() {
-            $('#adminPassword').css('border-color', '').attr('placeholder', 'Password');
-          }, 2000);
+        $('#loginError').hide();
+        var btn = $('#loginBtn');
+        btn.prop('disabled', true).text('Signing in...');
+
+        var email = $('#adminEmail').val().trim();
+        var password = $('#adminPassword').val();
+
+        var result = await sb.auth.signInWithPassword({ email: email, password: password });
+
+        if (result.error) {
+          console.error('Login failed:', result.error);
+          $('#loginError').text('Invalid email or password. Please try again.').show();
+          btn.prop('disabled', false).text('Sign In');
+          return;
+        }
+
+        // Login succeeded — check MFA factors
+        await handlePostLogin();
+        btn.prop('disabled', false).text('Sign In');
+      });
+
+      // MFA form: TOTP verification (Step 2)
+      $('#mfaForm').on('submit', async function(e) {
+        e.preventDefault();
+        $('#mfaError').hide();
+        var btn = $('#mfaBtn');
+        btn.prop('disabled', true).text('Verifying...');
+
+        var code = $('#mfaCode').val().trim();
+        if (code.length !== 6) {
+          $('#mfaError').text('Please enter a 6-digit code.').show();
+          btn.prop('disabled', false).text('Verify');
+          return;
+        }
+
+        try {
+          // Get the TOTP factor
+          var factorsResult = await sb.auth.mfa.listFactors();
+          var totpFactors = (factorsResult.data && factorsResult.data.totp) || [];
+          var verifiedFactor = totpFactors.find(function(f) { return f.status === 'verified'; });
+
+          if (!verifiedFactor) {
+            $('#mfaError').text('No verified MFA factor found.').show();
+            btn.prop('disabled', false).text('Verify');
+            return;
+          }
+
+          // Challenge and verify
+          var challengeResult = await sb.auth.mfa.challenge({ factorId: verifiedFactor.id });
+          if (challengeResult.error) {
+            console.error('MFA challenge failed:', challengeResult.error);
+            $('#mfaError').text('MFA challenge failed: ' + (challengeResult.error.message || 'Unknown error')).show();
+            btn.prop('disabled', false).text('Verify');
+            return;
+          }
+
+          var verifyResult = await sb.auth.mfa.verify({
+            factorId: verifiedFactor.id,
+            challengeId: challengeResult.data.id,
+            code: code
+          });
+
+          if (verifyResult.error) {
+            console.error('MFA verify failed:', verifyResult.error);
+            $('#mfaError').text('Invalid code. Please try again.').show();
+            $('#mfaCode').val('').focus();
+            btn.prop('disabled', false).text('Verify');
+            return;
+          }
+
+          // AAL2 achieved — now verify admin role
+          await verifyAdminAndInit();
+        } catch (err) {
+          console.error('MFA error:', err);
+          $('#mfaError').text('Something went wrong. Please try again.').show();
+          btn.prop('disabled', false).text('Verify');
+        }
+      });
+
+      // Auth state change listener: handle token refresh & sign-out
+      sb.auth.onAuthStateChange(function(event, session) {
+        if (event === 'SIGNED_OUT') {
+          resetToLogin();
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Admin session token refreshed');
         }
       });
     });
 
+    // Check for an existing authenticated session (auto-resume on page load)
+    async function checkExistingAdminSession() {
+      try {
+        var sessionResult = await sb.auth.getSession();
+        if (sessionResult.data && sessionResult.data.session) {
+          // Session exists — check AAL level
+          var aalResult = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aalResult.data && aalResult.data.currentLevel === 'aal2') {
+            // Already at AAL2 — verify admin role and go
+            await verifyAdminAndInit();
+            return;
+          } else if (aalResult.data && aalResult.data.currentLevel === 'aal1') {
+            // Signed in but needs MFA — show MFA step
+            await handlePostLogin();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('checkExistingAdminSession: error checking session', e);
+      }
+      // No valid session — show login form (default state)
+    }
+
+    // After password login, check MFA enrollment and present appropriate step
+    async function handlePostLogin() {
+      var factorsResult = await sb.auth.mfa.listFactors();
+      var totpFactors = (factorsResult.data && factorsResult.data.totp) || [];
+      var verifiedFactors = totpFactors.filter(function(f) { return f.status === 'verified'; });
+
+      if (verifiedFactors.length === 0) {
+        // No MFA enrolled — show enrollment message
+        $('#loginStep1').hide();
+        $('#loginStep2').hide();
+        $('#loginStepNoMfa').show();
+        $('#loginStepDenied').hide();
+      } else {
+        // MFA enrolled — show TOTP verification step
+        $('#loginStep1').hide();
+        $('#loginStep2').show();
+        $('#loginStepNoMfa').hide();
+        $('#loginStepDenied').hide();
+        $('#mfaCode').val('').focus();
+      }
+    }
+
+    // Verify the user has admin role via is_admin_check() RPC, then init dashboard.
+    // Throws on network/RPC errors so the calling handler can re-enable its button.
+    async function verifyAdminAndInit() {
+      var result = await sb.rpc('is_admin_check');
+
+      if (result.error || result.data !== true) {
+        console.warn('Admin check failed:', result.error || 'not admin');
+        $('#loginStep1').hide();
+        $('#loginStep2').hide();
+        $('#loginStepNoMfa').hide();
+        $('#loginStepDenied').show();
+        return;
+      }
+
+      // Admin verified — hide overlay and init dashboard
+      $('#loginOverlay').fadeOut(200);
+      $('#logoutBtn').show();
+      initDashboard();
+    }
+
+    // Sign out and reset to login screen
+    async function signOut() {
+      try {
+        await sb.auth.signOut();
+      } catch (e) { console.warn('signOut error:', e); }
+      resetToLogin();
+    }
+
+    // Reset UI to login state — cleans up all resources created by
+    // initDashboard so a subsequent login starts fresh without leaking
+    // intervals or stacking duplicate event handlers.
+    function resetToLogin() {
+      initialized = false;
+      allUsers = [];
+
+      // Clear any pending realtime reconnect timeout so it doesn't fire
+      // post-logout and re-create a channel on a signed-out client.
+      if (adminRtRetryTimeout) {
+        clearTimeout(adminRtRetryTimeout);
+        adminRtRetryTimeout = null;
+      }
+      adminRtRetryCount = 0;
+
+      if (adminChannel) {
+        try { sb.removeChannel(adminChannel); } catch (_) {}
+        adminChannel = null;
+      }
+
+      // Clear the clock interval to prevent duplicate ticking on re-login
+      if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+      }
+
+      // Remove namespaced delegated event handlers created by initDashboard
+      // to prevent handler stacking across logout/re-login cycles.
+      $(document).off('.adminDash');
+
+      $('#logoutBtn').hide();
+      $('#loginStep1').show();
+      $('#loginStep2').hide();
+      $('#loginStepNoMfa').hide();
+      $('#loginStepDenied').hide();
+      $('#loginError').hide();
+      $('#mfaError').hide();
+      $('#adminEmail').val('');
+      $('#adminPassword').val('');
+      $('#mfaCode').val('');
+      $('#loginOverlay').show();
+    }
+
     // =========================================================================
-    // INIT
+    // DASHBOARD INIT (called after successful AAL2 + admin verification)
     // =========================================================================
-    function init() {
+    function initDashboard() {
       if (initialized) return;
       initialized = true;
-
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // QR Code — try JS library first, fall back to API-generated image
       try {
@@ -708,8 +938,8 @@
       }
       $('#wizardUrl').text(WIZARD_URL);
 
-      // Clock
-      setInterval(() => {
+      // Clock — store interval ID so resetToLogin can clear it
+      clockInterval = setInterval(() => {
         $('#clock').text(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       }, 1000);
 
@@ -719,16 +949,16 @@
       // Realtime (with error handling and exponential backoff)
       subscribeAdminRealtime();
 
-      // Keyboard shortcuts
-      $(document).on('keydown', handleKeyboard);
+      // Use jQuery namespaced events (.adminDash) so they can be cleanly removed
+      // on logout without affecting other handlers, preventing handler stacking
+      // on logout/re-login cycles.
+      $(document).on('keydown.adminDash', handleKeyboard);
 
-      // Delegated click handler for email cells (avoids inline onclick / single-quote issues)
-      $(document).on('click', '.email-cell', function() {
+      $(document).on('click.adminDash', '.email-cell', function() {
         copyEmail(this, $(this).data('email'));
       });
 
-      // Delegated click handler for Mark Sent buttons (avoids JS-in-onclick injection)
-      $(document).on('click', '.btn-mark', function() {
+      $(document).on('click.adminDash', '.btn-mark', function() {
         var uid = $(this).data('uid');
         var status = $(this).data('status');
         if (uid && status) markSent(String(uid), String(status));
