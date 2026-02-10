@@ -808,7 +808,7 @@
         await sendPhoneChallenge();
         btn.prop('disabled', false).text('Resend Code');
         if (!$('#mfaError').is(':visible')) {
-          $('#mfaError').css('color', 'var(--vanta-accent)').text('New code sent!').show();
+          $('#mfaError').css('color', 'var(--vanta-success)').text('New code sent!').show();
           setTimeout(function() { $('#mfaError').hide().css('color', 'var(--vanta-error)'); }, 3000);
         }
       });
