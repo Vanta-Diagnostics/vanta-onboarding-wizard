@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanta Sales - iOS Update (TestFlight)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+  <style>
+    :root {
+      --vanta-purple: #662D8F;
+      --vanta-indigo: #49489F;
+      --vanta-blue: #1C75BA;
+      --vanta-teal: #3CC194;
+      --vanta-success: #10B981;
+      --surface-dark: #1E1E1E;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface-dark);
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--vanta-purple) 0%, var(--vanta-indigo) 25%, var(--vanta-blue) 50%, var(--vanta-teal) 100%);
+      padding: 48px 24px 56px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: var(--surface-dark);
+      border-radius: 40px 40px 0 0;
+    }
+
+    .hero-logo {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 32px;
+      opacity: 0.9;
+    }
+
+    .hero-logo span { font-weight: 400; font-size: 14px; opacity: 0.7; margin-left: 6px; }
+
+    .app-icon {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      background: #FFFFFF;
+      border: 2px solid rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 40px;
+    }
+
+    .app-name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .app-version {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 4px;
+    }
+
+    .app-publisher {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .content {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 20px 48px;
+    }
+
+    .action-btn {
+      display: block;
+      background: linear-gradient(135deg, var(--vanta-blue), var(--vanta-teal));
+      border: none;
+      color: #fff;
+      padding: 18px 32px;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      font-family: 'IBM Plex Sans', sans-serif;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      margin: 24px 0;
+      transition: opacity 0.2s, transform 0.1s;
+      cursor: pointer;
+      letter-spacing: -0.2px;
+    }
+
+    .action-btn:hover { opacity: 0.9; color: #fff; }
+    .action-btn:active { transform: scale(0.98); }
+
+    .action-btn .icon { margin-right: 8px; font-size: 20px; vertical-align: middle; }
+
+    .platform-note {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 32px;
+    }
+
+    .platform-note a {
+      color: var(--vanta-teal);
+      text-decoration: none;
+    }
+
+    .platform-note a:hover { text-decoration: underline; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .install-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+
+    .install-steps li {
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.75);
+    }
+
+    .install-steps li:last-child { border-bottom: none; }
+
+    .step-num {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(28,117,186,0.15);
+      color: var(--vanta-blue);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .recommend-badge {
+      display: inline-block;
+      background: rgba(16,185,129,0.15);
+      color: var(--vanta-success);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 8px;
+      vertical-align: middle;
+      letter-spacing: 0.3px;
+    }
+
+    .faq-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .faq-q {
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .faq-q:hover { background: rgba(255,255,255,0.03); }
+    .faq-q:focus-visible { outline: 2px solid var(--vanta-teal); outline-offset: -2px; }
+
+    .faq-q .arrow {
+      transition: transform 0.2s;
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .faq-q.open .arrow { transform: rotate(180deg); }
+
+    .faq-a {
+      display: none;
+      padding: 0 16px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .footer a { color: rgba(255,255,255,0.3); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-logo">VANTA <span>Diagnostics</span></div>
+    <div class="app-icon"><img src="img/vanta-emblem.png" alt="Vanta" style="width:56px;height:56px;object-fit:contain;"></div>
+    <div class="app-name">Vanta Sales</div>
+    <div class="app-version">iOS &bull; TestFlight</div>
+    <div class="app-publisher">Vanta Diagnostics</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <a class="action-btn" id="openTestFlightBtn" href="itms-beta://" onclick="openTestFlight(event)">
+      <span class="icon">&#9889;</span> Open TestFlight
+    </a>
+
+    <div class="platform-note" id="platformNote">Opens the TestFlight app on your iPhone or iPad</div>
+
+    <!-- How to Update Manually -->
+    <div class="section-title">How to Update Manually</div>
+    <ol class="install-steps">
+      <li>
+        <span class="step-num">1</span>
+        <span>Open the <strong>TestFlight</strong> app on your iPhone (or tap <strong>Open TestFlight</strong> above).</span>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <span>Tap <strong>Vanta Sales</strong> from the app list.</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <span>If an update is available, you will see an <strong>Update</strong> button. Tap it to install the latest version.</span>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <span>Wait for the update to install, then tap <strong>Open</strong> to launch the app.</span>
+      </li>
+    </ol>
+
+    <!-- Enable Automatic Updates -->
+    <div class="section-title">Enable Automatic Updates <span class="recommend-badge">RECOMMENDED</span></div>
+    <ol class="install-steps">
+      <li>
+        <span class="step-num">1</span>
+        <span>Open the <strong>TestFlight</strong> app on your iPhone.</span>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <span>Tap <strong>Vanta Sales</strong> from the app list.</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <span>Scroll down to the bottom of the app details page.</span>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <span>Toggle on <strong>Automatic Updates</strong>. New versions will install automatically in the background.</span>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <span>(Optional) Toggle off <strong>Push Notifications</strong> and <strong>Email Notifications</strong> to reduce noise from test build updates.</span>
+      </li>
+    </ol>
+
+    <!-- FAQ -->
+    <div class="section-title">Troubleshooting</div>
+
+    <div class="faq-card">
+      <div class="faq-q" role="button" tabindex="0" aria-expanded="false" onclick="toggleFaq(this)" onkeydown="faqKeyHandler(event, this)">
+        I don't see Vanta Sales in TestFlight
+        <span class="arrow" aria-hidden="true">&#9660;</span>
+      </div>
+      <div class="faq-a" role="region">
+        You need a TestFlight invitation from your administrator. If you previously received one, check your email for a message from Apple with a <strong>"View in TestFlight"</strong> button and tap it to add the app. If you never received an invite, contact your administrator.
+      </div>
+    </div>
+
+    <div class="faq-card">
+      <div class="faq-q" role="button" tabindex="0" aria-expanded="false" onclick="toggleFaq(this)" onkeydown="faqKeyHandler(event, this)">
+        TestFlight says the build has expired
+        <span class="arrow" aria-hidden="true">&#9660;</span>
+      </div>
+      <div class="faq-a" role="region">
+        TestFlight builds expire after 90 days. A new build needs to be published by the development team. Contact your administrator and a fresh build will be made available shortly.
+      </div>
+    </div>
+
+    <div class="faq-card">
+      <div class="faq-q" role="button" tabindex="0" aria-expanded="false" onclick="toggleFaq(this)" onkeydown="faqKeyHandler(event, this)">
+        Do I need to do anything when a new update is available?
+        <span class="arrow" aria-hidden="true">&#9660;</span>
+      </div>
+      <div class="faq-a" role="region">
+        If <strong>Automatic Updates</strong> is enabled (recommended), the app updates on its own in the background — no action needed. Otherwise, open TestFlight, tap <strong>Vanta Sales</strong>, and tap <strong>Update</strong>.
+      </div>
+    </div>
+
+    <div class="faq-card">
+      <div class="faq-q" role="button" tabindex="0" aria-expanded="false" onclick="toggleFaq(this)" onkeydown="faqKeyHandler(event, this)">
+        Can I get this on Android?
+        <span class="arrow" aria-hidden="true">&#9660;</span>
+      </div>
+      <div class="faq-a" role="region">
+        Android users download the app as an APK directly instead of through TestFlight. Contact your administrator for the Android download link.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2026 Vanta Diagnostics &bull; <a href="https://vantadiagnostics.com">vantadiagnostics.com</a>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+  <script>
+    // Detect iOS (iPhone, iPad, iPod)
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    $(document).ready(function() {
+      if (!isIOS()) {
+        // Non-iOS: disable button visually and for assistive tech
+        $('#openTestFlightBtn')
+          .removeAttr('href')
+          .removeAttr('onclick')
+          .attr('aria-disabled', 'true')
+          .attr('tabindex', '-1')
+          .css({ opacity: 0.5, cursor: 'default' })
+          .html('<span class="icon">&#9889;</span> TestFlight is iOS only');
+
+        $('#platformNote').html(
+          'TestFlight is only available on iPhone and iPad. ' +
+          'Open this page on your iOS device to continue.'
+        );
+      }
+    });
+
+    function openTestFlight(e) {
+      // itms-beta:// will open the TestFlight app on iOS
+      // The href handles it natively; this function is for any
+      // additional tracking or fallback logic in the future.
+    }
+
+    function toggleFaq(el) {
+      const $q = $(el);
+      const $a = $q.next('.faq-a');
+      const isOpen = $q.hasClass('open');
+      $q.toggleClass('open');
+      $q.attr('aria-expanded', isOpen ? 'false' : 'true');
+      $a.slideToggle(200);
+    }
+
+    function faqKeyHandler(e, el) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleFaq(el);
+      }
+    }
+  </script>
+</body>
+</html>
