@@ -732,21 +732,26 @@
         localStorage.setItem('onboarding_session_token', sessionToken);
         localStorage.setItem('onboarding_vanta_email', email);
 
-        // Now resume normal flow
-        const { data: userData } = await sb
+        // Now resume normal flow — fetch the full user record
+        const { data: userData, error: userError } = await sb
           .from(TABLE)
           .select('*')
           .eq('id', userId)
           .single();
 
-        if (userData) {
-          userPlatform = userData.platform || 'ios';
-          currentStatus = userData.status;
-          preloadOCR();
-          showStepForStatus(userData);
-          subscribeRealtime();
-          startPolling();
+        if (userError || !userData) {
+          console.error('claimSession: failed to fetch user record:', userError);
+          showError('Claimed successfully but could not load your progress. Please refresh the page.');
+          btn.prop('disabled', false).text('Verify & Continue');
+          return;
         }
+
+        userPlatform = userData.platform || 'ios';
+        currentStatus = userData.status;
+        preloadOCR();
+        showStepForStatus(userData);
+        subscribeRealtime();
+        startPolling();
       } catch (e) {
         console.error('claimSession error:', e);
         showError('Something went wrong. Please try again.');

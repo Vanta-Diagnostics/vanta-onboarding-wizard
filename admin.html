@@ -520,15 +520,19 @@
         </form>
       </div>
 
-      <!-- Step 2: MFA TOTP Verification -->
+      <!-- Step 2: MFA Verification (TOTP or Phone/SMS) -->
       <div id="loginStep2" style="display:none;">
-        <p>Enter the 6-digit code from your authenticator app.</p>
+        <p id="mfaPrompt">Enter the 6-digit code from your authenticator app.</p>
         <form id="mfaForm">
           <input type="text" id="mfaCode" placeholder="000000" maxlength="6" pattern="[0-9]{6}"
                  autocomplete="one-time-code" inputmode="numeric"
                  style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:600;" autofocus>
           <div id="mfaError" style="color:var(--vanta-error);font-size:13px;margin-bottom:10px;display:none;"></div>
           <button type="submit" class="btn-login" id="mfaBtn">Verify</button>
+          <button type="button" class="btn-login" id="mfaResendBtn"
+                  style="display:none;margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,0.3);font-size:13px;">
+            Resend Code
+          </button>
         </form>
       </div>
 
@@ -685,7 +689,9 @@
     let adminChannel = null;
     let adminRtRetryCount = 0;
     let adminRtRetryTimeout = null;
-    let clockInterval = null;    // setInterval ID for the clock display
+    let clockInterval = null;       // setInterval ID for the clock display
+    let activeMfaFactor = null;     // the verified MFA factor chosen for challenge/verify
+    let activeChallengeId = null;   // challenge ID returned by mfa.challenge()
 
     // =========================================================================
     // SUPABASE CLIENT (created early so auth methods work before dashboard init)
@@ -723,7 +729,7 @@
         btn.prop('disabled', false).text('Sign In');
       });
 
-      // MFA form: TOTP verification (Step 2)
+      // MFA form: verify code (supports both TOTP and Phone factors)
       $('#mfaForm').on('submit', async function(e) {
         e.preventDefault();
         $('#mfaError').hide();
@@ -737,30 +743,43 @@
           return;
         }
 
+        if (!activeMfaFactor) {
+          $('#mfaError').text('No MFA factor available. Please sign in again.').show();
+          btn.prop('disabled', false).text('Verify');
+          return;
+        }
+
         try {
-          // Get the TOTP factor
-          var factorsResult = await sb.auth.mfa.listFactors();
-          var totpFactors = (factorsResult.data && factorsResult.data.totp) || [];
-          var verifiedFactor = totpFactors.find(function(f) { return f.status === 'verified'; });
+          var challengeId;
 
-          if (!verifiedFactor) {
-            $('#mfaError').text('No verified MFA factor found.').show();
-            btn.prop('disabled', false).text('Verify');
-            return;
-          }
-
-          // Challenge and verify
-          var challengeResult = await sb.auth.mfa.challenge({ factorId: verifiedFactor.id });
-          if (challengeResult.error) {
-            console.error('MFA challenge failed:', challengeResult.error);
-            $('#mfaError').text('MFA challenge failed: ' + (challengeResult.error.message || 'Unknown error')).show();
-            btn.prop('disabled', false).text('Verify');
-            return;
+          if (activeMfaFactor.factor_type === 'phone') {
+            // Phone: challenge was already sent in handlePostLogin / resend;
+            // use the stored challengeId.
+            if (!activeChallengeId) {
+              // Edge case: challenge wasn't stored — send a new one
+              await sendPhoneChallenge();
+            }
+            challengeId = activeChallengeId;
+            if (!challengeId) {
+              $('#mfaError').text('Failed to create challenge. Please resend the code.').show();
+              btn.prop('disabled', false).text('Verify');
+              return;
+            }
+          } else {
+            // TOTP: create a fresh challenge on each verify attempt
+            var challengeResult = await sb.auth.mfa.challenge({ factorId: activeMfaFactor.id });
+            if (challengeResult.error) {
+              console.error('MFA challenge failed:', challengeResult.error);
+              $('#mfaError').text('MFA challenge failed: ' + (challengeResult.error.message || 'Unknown error')).show();
+              btn.prop('disabled', false).text('Verify');
+              return;
+            }
+            challengeId = challengeResult.data.id;
           }
 
           var verifyResult = await sb.auth.mfa.verify({
-            factorId: verifiedFactor.id,
-            challengeId: challengeResult.data.id,
+            factorId: activeMfaFactor.id,
+            challengeId: challengeId,
             code: code
           });
 
@@ -778,6 +797,19 @@
           console.error('MFA error:', err);
           $('#mfaError').text('Something went wrong. Please try again.').show();
           btn.prop('disabled', false).text('Verify');
+        }
+      });
+
+      // Resend button for phone MFA
+      $('#mfaResendBtn').on('click', async function() {
+        var btn = $(this);
+        btn.prop('disabled', true).text('Sending...');
+        $('#mfaError').hide();
+        await sendPhoneChallenge();
+        btn.prop('disabled', false).text('Resend Code');
+        if (!$('#mfaError').is(':visible')) {
+          $('#mfaError').css('color', 'var(--vanta-accent)').text('New code sent!').show();
+          setTimeout(function() { $('#mfaError').hide().css('color', 'var(--vanta-error)'); }, 3000);
         }
       });
 
@@ -814,25 +846,93 @@
       // No valid session — show login form (default state)
     }
 
-    // After password login, check MFA enrollment and present appropriate step
+    // After password login, check MFA enrollment and present appropriate step.
+    // Supports both TOTP (authenticator app) and phone (SMS/text) factors.
     async function handlePostLogin() {
       var factorsResult = await sb.auth.mfa.listFactors();
-      var totpFactors = (factorsResult.data && factorsResult.data.totp) || [];
-      var verifiedFactors = totpFactors.filter(function(f) { return f.status === 'verified'; });
 
-      if (verifiedFactors.length === 0) {
+      // Check for API errors before interpreting the response.
+      // Without this, a network/service failure gives null data, which was
+      // previously misinterpreted as "no MFA enrolled."
+      if (factorsResult.error) {
+        console.error('listFactors failed:', factorsResult.error);
+        $('#loginError').text('Unable to verify MFA status. Please try again.').show();
+        $('#loginStep1').show();
+        $('#loginStep2').hide();
+        $('#loginStepNoMfa').hide();
+        $('#loginStepDenied').hide();
+        return;
+      }
+
+      var totpFactors = (factorsResult.data && factorsResult.data.totp) || [];
+      var phoneFactors = (factorsResult.data && factorsResult.data.phone) || [];
+
+      // Collect all verified factors across both types
+      var verifiedTotp = totpFactors.filter(function(f) { return f.status === 'verified'; });
+      var verifiedPhone = phoneFactors.filter(function(f) { return f.status === 'verified'; });
+
+      if (verifiedTotp.length === 0 && verifiedPhone.length === 0) {
         // No MFA enrolled — show enrollment message
         $('#loginStep1').hide();
         $('#loginStep2').hide();
         $('#loginStepNoMfa').show();
         $('#loginStepDenied').hide();
+        activeMfaFactor = null;
+        activeChallengeId = null;
+        return;
+      }
+
+      // Prefer phone factor (the primary method used), fall back to TOTP
+      if (verifiedPhone.length > 0) {
+        activeMfaFactor = verifiedPhone[0];
       } else {
-        // MFA enrolled — show TOTP verification step
-        $('#loginStep1').hide();
+        activeMfaFactor = verifiedTotp[0];
+      }
+
+      // Show MFA verification step with appropriate prompt
+      $('#loginStep1').hide();
+      $('#loginStepNoMfa').hide();
+      $('#loginStepDenied').hide();
+      $('#mfaCode').val('');
+      $('#mfaError').hide();
+      activeChallengeId = null;
+
+      if (activeMfaFactor.factor_type === 'phone') {
+        // Phone MFA: trigger challenge immediately to send SMS, then show UI
+        var maskedPhone = activeMfaFactor.phone
+          ? activeMfaFactor.phone.replace(/.(?=.{4})/g, '*')
+          : 'your phone';
+        $('#mfaPrompt').text('A verification code has been sent to ' + maskedPhone + '.');
+        $('#mfaResendBtn').show();
         $('#loginStep2').show();
-        $('#loginStepNoMfa').hide();
-        $('#loginStepDenied').hide();
-        $('#mfaCode').val('').focus();
+
+        // Send the SMS challenge
+        await sendPhoneChallenge();
+        $('#mfaCode').focus();
+      } else {
+        // TOTP MFA: user enters code from their authenticator app
+        $('#mfaPrompt').text('Enter the 6-digit code from your authenticator app.');
+        $('#mfaResendBtn').hide();
+        $('#loginStep2').show();
+        $('#mfaCode').focus();
+      }
+    }
+
+    // Send (or re-send) a phone MFA challenge via SMS
+    async function sendPhoneChallenge() {
+      if (!activeMfaFactor || activeMfaFactor.factor_type !== 'phone') return;
+      try {
+        var challengeResult = await sb.auth.mfa.challenge({ factorId: activeMfaFactor.id });
+        if (challengeResult.error) {
+          console.error('Phone MFA challenge failed:', challengeResult.error);
+          $('#mfaError').text('Failed to send code. Please try again.').show();
+          return;
+        }
+        activeChallengeId = challengeResult.data.id;
+        console.log('Phone MFA challenge sent, challengeId:', activeChallengeId);
+      } catch (e) {
+        console.error('Phone MFA challenge error:', e);
+        $('#mfaError').text('Failed to send verification code.').show();
       }
     }
 
@@ -841,8 +941,15 @@
     async function verifyAdminAndInit() {
       var result = await sb.rpc('is_admin_check');
 
-      if (result.error || result.data !== true) {
-        console.warn('Admin check failed:', result.error || 'not admin');
+      // Distinguish between RPC/network errors and a genuine "not admin" result.
+      // A transient failure should be retriable, not shown as "Access Denied."
+      if (result.error) {
+        console.error('is_admin_check RPC error:', result.error);
+        throw new Error('Admin verification failed: ' + (result.error.message || 'network error'));
+      }
+
+      if (result.data !== true) {
+        console.warn('Admin check returned false — user is not admin');
         $('#loginStep1').hide();
         $('#loginStep2').hide();
         $('#loginStepNoMfa').hide();
@@ -889,6 +996,10 @@
         clearInterval(clockInterval);
         clockInterval = null;
       }
+
+      // Clear MFA state
+      activeMfaFactor = null;
+      activeChallengeId = null;
 
       // Remove namespaced delegated event handlers created by initDashboard
       // to prevent handler stacking across logout/re-login cycles.
